@@ -1,4 +1,4 @@
-// Бланк обхода «цвета колонками»: модель = строка, цвета = колонки, нет цвета — штриховка
+// Бланк пересчёта по образцу: модель = строка, колонки Белый…Вотан, Итого, Примечание; нет цвета — пустая клетка
 const { JSDOM } = require('jsdom');
 const fs = require('fs'), dir = 'C:/Users/user/Desktop/LIVARO/';
 const html = fs.readFileSync(dir + 'LIVARO.html', 'utf8').replace(/<script src="([^"]+)"><\/script>/g, (m, s) => '<script>' + fs.readFileSync(dir + s.split('?')[0], 'utf8') + '<\/script>');
@@ -8,21 +8,20 @@ const dom = new JSDOM(html, { runScripts: 'dangerously', url: 'http://localhost/
   w.addEventListener('error', e => errors.push(e.message));
 } });
 const w = dom.window, d = w.document;
+const rows = () => [...d.querySelectorAll('.p-t tr.mrow')];
 try {
+  console.log('1 заголовок:', d.querySelector('.inv-title').textContent, '| поля:', [...d.querySelectorAll('.inv-fields div')].map(x => x.textContent.trim()).join(' '));
   const heads = [...d.querySelectorAll('.p-t thead th')].map(x => x.textContent);
-  console.log('1 колонки:', heads.join(' | '));
-  const rows = d.querySelectorAll('.p-t tr.mrow').length, cells = d.querySelectorAll('.p-t td.mc').length;
-  console.log('2 строк-моделей:', rows, '| клеток для цифр:', cells, '(товаров 321)', cells === 321 ? 'OK' : 'FAIL');
-  // корпус Милан 6х: одна строка, 5 цветов
-  const r = [...d.querySelectorAll('.p-t tr.mrow')].find(x => /Корпус Милан 6х по бокам полки/.test(x.textContent));
-  console.log('3 «' + r.children[1].textContent + '» №', r.children[0].textContent, '| клеток:', r.querySelectorAll('td.mc').length, '| штриховок:', r.querySelectorAll('td.na').length);
-  // цифры программы в углу клетки
-  const lino = w.eval('(() => { for (const id in NODES) { const it = NODES[id].it.find(x => /по бокам полки/.test(x[0]) && /лино/i.test(x[0])); if (it) return it[0]; } })()');
-  w.eval('DB.stockMoves.push({ id: "t1", date: "2026-10-26", name: ' + JSON.stringify(lino) + ', q: 7, kind: "in", note: "", createdAt: 1 }); render()');
-  const r2 = [...d.querySelectorAll('.p-t tr.mrow')].find(x => /Корпус Милан 6х по бокам полки/.test(x.textContent));
-  console.log('4 по программе в клетке ЛИНО:', [...r2.children].map(td => td.querySelector('.pp') ? td.querySelector('.pp').textContent : '').filter(Boolean).join(','), '| колонка:', heads[[...r2.children].findIndex(td => td.querySelector('.pp'))]);
-  // вид списком
-  w.eval('DB.settings = Object.assign({}, DB.settings, { invMatrix: false }); render()');
-  console.log('5 списком: строк товаров', d.querySelectorAll('.p-t td.no').length, '| штриховок', d.querySelectorAll('td.na').length);
+  console.log('2 колонки:', heads.join(' | '), heads.join('|') === '№|Наименование|Белый|Серый|Ваниль|Лино|Вотан|Итого|Примечание' ? 'OK' : 'FAIL');
+  const nos = rows().map(r => +r.children[0].textContent);
+  console.log('3 номера по порядку:', nos.slice(0, 5).join(','), '…', nos.length, nos.every((n, i) => n === i + 1) ? 'OK' : 'FAIL');
+  console.log('4 штриховок нет:', d.querySelectorAll('td.na').length === 0 ? 'OK' : 'FAIL', '| цифр программы нет:', d.querySelectorAll('.pp').length === 0 ? 'OK' : 'FAIL');
+  console.log('5 группы:', [...d.querySelectorAll('.p-t tr.g')].slice(0, 6).map(x => x.textContent).join(' | '));
+  console.log('6 названия:'); rows().slice(0, 14).forEach(r => console.log('   ', r.children[0].textContent, r.children[1].textContent));
+  const long = rows().filter(r => /\d+\s*[хx]\s*\d+|коробк/i.test(r.children[1].textContent));
+  console.log('7 остались размеры/коробки:', long.length ? long.map(r => r.children[1].textContent).join(' ; ') : 'нет — OK');
+  // каждая папка с нового листа
+  w.eval('DB.settings = Object.assign({}, DB.settings, { invBreak: true }); render()');
+  console.log('8 с нового листа:', d.querySelectorAll('tbody.newpage').length, 'разрывов');
 } catch (e) { console.log('FAIL', e.stack); }
 console.log('errors:', errors);

@@ -2198,7 +2198,7 @@ VIEWS.stock = () => {
   const all = Object.values(M).filter(s => s.tracked), shortN = all.filter(s => s.free < 0).length;
   const moves = DB.stockMoves.slice().sort((a, b) => b.createdAt - a.createdAt).slice(0, 30);
   return '<div class="head"><div><h1>Склад</h1><div class="sub-h">Приход из цеха, остатки и резерв под оформленные заказы. При отгрузке товар списывается сам.</div></div>' +
-    '<div class="btns"><a class="btn" href="#/invprint">Бланк обхода</a><a class="btn" href="#/inv">Инвентаризация списком</a><button class="btn" data-act="sk-open" data-kind="adj">Пересчитать один товар</button><button class="btn pri" data-act="sk-open" data-kind="in">+ Приход</button></div></div>' +
+    '<div class="btns"><a class="btn" href="#/invprint">Бланк пересчёта</a><a class="btn" href="#/inv">Инвентаризация списком</a><button class="btn" data-act="sk-open" data-kind="adj">Пересчитать один товар</button><button class="btn pri" data-act="sk-open" data-kind="in">+ Приход</button></div></div>' +
     '<div class="kpis"><div class="kpi"><div class="l">Позиций на учёте</div><div class="v">' + all.length + '</div><div class="h">' + all.reduce((s, x) => s + Math.max(0, x.have), 0) + ' шт на складе</div></div>' +
     '<div class="kpi"><div class="l">В резерве</div><div class="v">' + all.reduce((s, x) => s + x.res, 0) + ' шт</div><div class="h">под оформленные заказы</div></div>' +
     '<div class="kpi"><div class="l">Не хватает</div><div class="v ' + (shortN ? 'debt' : '') + '">' + shortN + ' ' + plural(shortN, 'позиция', 'позиции', 'позиций') + '</div><div class="h">нужно произвести</div></div></div>' +
@@ -2273,7 +2273,7 @@ function stockCard(o) {
 /* Все товары каталога одной таблицей: вписываете «Факт» (руками, из бланка, из Excel или из остатков 1С) и сохраняете разом.
    Каждая заполненная строка = поправка остатка (инвентаризация) и постановка товара на учёт. */
 /* настройки обхода склада (общие для бланка и ввода): какие товары, графа «По программе», папка с нового листа */
-const invSet = () => Object.assign({ invShow: 'all', invPlan: true, invBreak: false, invMatrix: true }, DB.settings || {});
+const invSet = () => Object.assign({ invShow: 'all', invBreak: false }, DB.settings || {});
 const INV_SHOW = [['all', 'Весь каталог'], ['tracked', 'Только на учёте'], ['stock', 'Только где есть остаток']];
 /* постоянный номер товара — порядок в каталоге; одинаковый в бланке и в «Инвентаризации списком» */
 function invNumbers() {
@@ -2335,7 +2335,7 @@ VIEWS.inv = () => {
   return '<div class="head"><div><div class="crumb"><a href="#/stock">Склад</a> / Инвентаризация</div><h1>Инвентаризация списком</h1>' +
     '<div class="sub-h">Впишите фактическое количество (Enter — к следующей строке). Пустые строки не трогаются. Сохраняется по кнопке.</div></div>' +
     '<div class="btns"><button class="btn" data-act="inv-xls">Скачать в Excel</button><label class="btn">Загрузить Excel / остатки 1С<input type="file" accept=".xlsx,.xls,.csv" data-ch="inv-load" style="display:none"></label>' +
-    '<a class="btn" href="#/invprint">Бланк обхода</a><button class="btn pri big" data-act="inv-save"' + (filled ? '' : ' disabled') + '>Сохранить (' + filled + ')</button></div></div>' +
+    '<a class="btn" href="#/invprint">Бланк пересчёта</a><button class="btn pri big" data-act="inv-save"' + (filled ? '' : ' disabled') + '>Сохранить (' + filled + ')</button></div></div>' +
     (UI.invMsg ? '<div class="warn" style="background:var(--accent-bg);color:var(--accent-ink)"><span>' + UI.invMsg + '</span><button class="btn sm" data-act="inv-msg-x">Понятно</button></div>' : '') +
     '<div class="card"><div class="filters"><div class="fgroup"><span>Папка</span><select class="inp" style="min-height:36px" data-ch="inv-f"><option value="">Все товары</option>' +
     allFolders(DB.cat).map(({ n, depth }) => '<option value="' + n.id + '"' + (UI.invF === n.id ? ' selected' : '') + '>' + '   '.repeat(depth) + esc(n.n) + '</option>').join('') + '</select></div>' +
@@ -2343,86 +2343,67 @@ VIEWS.inv = () => {
     (filled ? '<button class="btn sm" data-act="inv-clear">Очистить введённое</button>' : '') + '</div></div>' +
     '<div class="card tcard"><table class="t"><thead><tr><th class="num">№</th><th>Товар · ' + rows.length + '</th><th class="num">По программе</th><th class="num">Факт</th></tr></thead><tbody>' + body + '</tbody></table></div>';
 };
-/* бланк обхода склада. Два вида:
-   — «цвета колонками» (по умолчанию): строка = модель («Корпус Милан 6х»), колонки БЕЛЫЙ…ВОТАН; товары без цвета — в колонку «Кол-во»;
-   — списком: строка = товар, графы Ед. / По программе / Факт / Разница / Примечание.
-   № — постоянные номера товаров (как в «Инвентаризации списком»); у модели — диапазон «23–27». */
+/* бланк пересчёта склада (по образцу пользователя): строка = модель, колонки Белый…Вотан, Итого, Примечание.
+   Клетки пустые — под ручку; если такого цвета у модели нет, клетка тоже пустая. Товары без цвета пишут в «Итого».
+   Название строки: если в папке одна модель — имя папки (там уже чистые названия), иначе название товара
+   без цвета, размеров и «(Коробка…)». № — порядковый номер строки на бланке. */
 const modelTitle = n => n.replace(colorRe(), '').replace(/\(\s*\)/g, '').replace(/\s+-\s*$/, '').replace(/\s+/g, ' ').trim();
+const DIMS = /\d+\s*[хx×]\s*\d+(\s*[хx×]\s*\d+)?|[вшг]\s*\d{2,3}/i;
+function shortTitle(s) {
+  return s.replace(/\(([^()]*)\)/g, (m, x) => DIMS.test(x) || /коробк/i.test(x) ? ' ' : m) // скобки с размерами или «Коробка № 1 и № 2»
+    .replace(/\d+\s*[хx×]\s*\d+(\s*[хx×]\s*\d+)?/gi, ' ')                                  // размеры без скобок: 220х270х52, 98 х 98
+    .replace(/\(\s*\)/g, ' ').replace(/\s+/g, ' ').replace(/[\s\-–—,]+$/, '').trim();
+}
+const folderTitle = n => n.replace(/\s*\(\s*([^()]+?)\s*\)\s*$/, ' — $1').replace(/\s+/g, ' ').trim(); // «Милан 2х ( полочный )» → «Милан 2х — полочный»
+/* Лино и Сатин — один цвет: в бланке одна колонка «Лино» */
+const invColor = k => k === 'сатин' ? 'лино' : k;
+const INV_COLS = COLORS.filter(([k]) => k !== 'сатин');
 function invModels(names) {
   const out = [], byBase = {};
   names.forEach(name => {
-    const m = name.match(colorRe()), ck = m ? colorKey(m[0]) : '';
+    const m = name.match(colorRe()), ck = m ? invColor(colorKey(m[0])) : '';
     const b = ck ? baseName(name) : '\u0000' + name; // товар без цвета — отдельной строкой
     let row = byBase[b];
-    if (!row || row.cells[ck || '-']) { row = { title: ck ? modelTitle(name) : name, cells: {}, names: [] }; byBase[b] = row; out.push(row); }
+    if (!row || row.cells[ck || '-']) { row = { title: shortTitle(ck ? modelTitle(name) : name), cells: {}, names: [] }; byBase[b] = row; out.push(row); }
     row.cells[ck || '-'] = name; row.names.push(name);
   });
   return out;
 }
 VIEWS.invprint = () => {
-  const S = invSet(), M = stockMap(), NO = invNumbers(), sel = invSel(), mx = S.invMatrix;
-  const exist = sel && sel.filter(p => allFolders(DB.cat).some(({ n }) => folderPath(n) === p));
-  const fn = !sel ? 'Все папки' : exist.length ? 'Папки: ' + exist.join('; ') : 'Папки не выбраны';
-  const pos = k => k + ' ' + plural(k, 'позиция', 'позиции', 'позиций');
-  const plan = name => { const s = M[name]; return s && s.tracked ? s.have : ''; };
-  // папки с товарами
+  const S = invSet(), sel = invSel();
+  // папки с галочкой и их подпапки; в каждой — модели
   const folders = [];
   allFolders(DB.cat).forEach(({ n }) => {
-    if (!invFolderOn(n, sel)) return; // только папки с галочкой и их подпапки
-    const items = orderIdx(n).map(i => n.it[i][0]).filter(name => invPass(name, M));
-    if (items.length) folders.push({ n, items, models: mx ? invModels(items) : null });
+    if (!invFolderOn(n, sel)) return;
+    const items = orderIdx(n).map(i => n.it[i][0]);
+    if (!items.length) return;
+    const models = invModels(items);
+    if (models.length === 1 && n.id.indexOf('-') > 0) models[0].title = folderTitle(n.n);
+    folders.push({ n, models });
   });
-  const cnt = folders.reduce((k, x) => k + x.items.length, 0);
-  let head, cols, body = '', rowsN = cnt;
-  if (mx) {
-    const used = {}; folders.forEach(x => x.models.forEach(r => Object.keys(r.cells).forEach(k => { used[k] = 1; })));
-    const colors = COLORS.filter(([k], i) => i < 5 || used[k]), plain = used['-'];
-    cols = 3 + colors.length + (plain ? 1 : 0);
-    const cw = colors.length + (plain ? 1 : 0) > 6 ? 13 : 14; // клетке хватит места на 2–3 цифры, остальное — названию модели
-    head = '<th style="width:15mm">№</th><th>Модель</th>' + colors.map(([, l]) => '<th class="mcol" style="width:' + cw + 'mm">' + l.toUpperCase() + '</th>').join('') +
-      (plain ? '<th class="mcol" style="width:' + cw + 'mm">Кол-во</th>' : '') + '<th style="width:17mm">Приме&shy;чание</th>';
-    const cell = name => name ? '<td class="mc">' + (S.invPlan && plan(name) !== '' ? '<span class="pp">' + plan(name) + '</span>' : '') + '</td>' : '<td class="na"></td>';
-    rowsN = folders.reduce((k, x) => k + x.models.length, 0);
-    // подпапка с одной моделью не получает свой заголовок — идёт под общим заголовком родителя («Двери / Двери МИЛАН»)
-    const groups = [];
-    folders.forEach(x => {
-      const pid = x.n.id.slice(0, x.n.id.lastIndexOf('-')), key = x.models.length === 1 && x.n.id.indexOf('-') > 0 ? folderPath(NODES[pid]) : folderPath(x.n);
-      const last = groups[groups.length - 1];
-      if (last && last.key === key) { last.items = last.items.concat(x.items); last.models = last.models.concat(x.models); }
-      else groups.push({ key, items: x.items.slice(), models: x.models.slice() });
-    });
-    groups.forEach((x, fi) => {
-      body += '<tbody' + (S.invBreak && fi ? ' class="newpage"' : '') + '><tr class="g"><td colspan="' + cols + '">' + esc(x.key) + ' <span style="font-weight:400">· ' + pos(x.items.length) + '</span></td></tr>' +
-        x.models.map(r => {
-          const nos = r.names.map(nm => NO[nm]), a = Math.min(...nos), b = Math.max(...nos);
-          return '<tr class="mrow"><td class="no">' + (a === b ? a : a + '–' + b) + '</td><td>' + esc(r.title) + '</td>' + colors.map(([k]) => cell(r.cells[k])).join('') + (plain ? cell(r.cells['-']) : '') + '<td></td></tr>';
-        }).join('') + '</tbody>';
-    });
-  } else {
-    cols = S.invPlan ? 7 : 6;
-    head = '<th style="width:11mm">№</th><th>Товар</th><th style="width:9mm">Ед.</th>' + (S.invPlan ? '<th style="width:18mm">По программе</th>' : '') +
-      '<th style="width:18mm">Факт</th><th style="width:17mm">Разница</th><th style="width:' + (S.invPlan ? 26 : 34) + 'mm">Примечание</th>';
-    folders.forEach((x, fi) => {
-      body += '<tbody' + (S.invBreak && fi ? ' class="newpage"' : '') + '><tr class="g"><td colspan="' + cols + '">' + esc(folderPath(x.n)) + ' <span style="font-weight:400">· ' + pos(x.items.length) + '</span></td></tr>' +
-        x.items.map(name => '<tr><td class="no">' + NO[name] + '</td><td>' + esc(name) + '</td><td class="u">шт</td>' + (S.invPlan ? '<td class="pl">' + plan(name) + '</td>' : '') + '<td></td><td></td><td></td></tr>').join('') + '</tbody>';
-    });
-  }
-  const showName = (INV_SHOW.find(x => x[0] === S.invShow) || INV_SHOW[0])[1];
-  const size = pos(cnt) + (mx ? ' в ' + rowsN + ' ' + plural(rowsN, 'строке', 'строках', 'строках') : '');
-  return '<div class="noprint"><div class="head"><div><div class="crumb"><a href="#/stock">Склад</a> / <a href="#/inv">Инвентаризация</a> / Бланк обхода</div><h1>Бланк обхода склада · ' + size + '</h1>' +
-    '<div class="sub-h">Кладовщик идёт по складу с листом и вписывает «Факт» по каждой позиции. Потом цифры вносятся в «Инвентаризации списком» — номера там те же.</div></div>' +
+  const colors = INV_COLS, cols = 4 + colors.length;
+  // подпапка с одной моделью не получает свой заголовок — идёт под заголовком родителя («Корпуса Милан»)
+  const groups = [];
+  folders.forEach(x => {
+    const one = x.models.length === 1 && x.n.id.indexOf('-') > 0, g = one ? NODES[x.n.id.slice(0, x.n.id.lastIndexOf('-'))] : x.n;
+    const last = groups[groups.length - 1];
+    if (last && last.n === g) last.models = last.models.concat(x.models); else groups.push({ n: g, models: x.models.slice() });
+  });
+  let no = 0, body = '';
+  groups.forEach((x, gi) => {
+    body += '<tbody' + (S.invBreak && gi ? ' class="newpage"' : '') + '><tr class="g"><td colspan="' + cols + '">' + esc(x.n.n.replace(/^\d+\.\s*/, '')) + '</td></tr>' +
+      x.models.map(r => '<tr class="mrow"><td class="no">' + (++no) + '</td><td>' + esc(r.title) + '</td>' + colors.map(() => '<td class="mc"></td>').join('') + '<td class="mc"></td><td></td></tr>').join('') + '</tbody>';
+  });
+  return '<div class="noprint"><div class="head"><div><div class="crumb"><a href="#/stock">Склад</a> / <a href="#/inv">Инвентаризация</a> / Бланк пересчёта</div><h1>Бланк пересчёта склада · ' + no + ' ' + plural(no, 'строка', 'строки', 'строк') + '</h1>' +
+    '<div class="sub-h">Отметьте папки, распечатайте и пересчитайте склад. Товары без цвета пишите в «Итого».</div></div>' +
     '<div class="btns"><a class="btn" href="#/inv">← К вводу цифр</a><button class="btn pri big" data-act="print">Распечатать</button></div></div>' +
-    '<div class="card">' + invFoldBox(M) + '<div class="filters" style="margin-top:14px">' + invSetBar() + '</div><div class="filters" style="margin-top:10px">' +
-    '<label class="chk"><input type="checkbox" class="cb" data-ch="inv-matrix"' + (mx ? ' checked' : '') + '> <b>Цвета колонками</b> (модель — одна строка, цвета — колонки; так бланк короче)</label>' +
-    '<label class="chk"><input type="checkbox" class="cb" data-ch="inv-plan"' + (S.invPlan ? ' checked' : '') + '> ' + (mx ? 'Цифры программы мелко в углу клетки' : 'Графа «По программе»') + ' (снимите — кладовщик считает «вслепую»)</label>' +
+    '<div class="card">' + invFoldBox(stockMap()) + '<div class="filters" style="margin-top:14px">' +
     '<label class="chk"><input type="checkbox" class="cb" data-ch="inv-break"' + (S.invBreak ? ' checked' : '') + '> Каждая папка с нового листа</label></div></div></div>' +
-    '<div class="paperwrap"><div class="paper inv-paper' + (mx ? ' inv-mx' : '') + '"><div class="p-head"><div class="brand">LIVARO</div><div style="text-align:right;font-size:15px"><b>Бланк обхода склада</b>' +
-    '<div style="font-size:12px;margin-top:2px;max-width:120mm;margin-left:auto">' + esc(fn + ' · ' + showName.toLowerCase() + ' · ' + pos(cnt)) + '</div></div></div>' +
-    '<div class="inv-fields"><div>Дата: <span></span></div><div>Кладовщик: <span></span></div><div>Склад / место: <span></span></div></div>' +
-    '<table class="p-t"><thead><tr>' + head + '</tr></thead>' +
-    (body || '<tbody><tr><td colspan="' + cols + '">' + (sel && !sel.length ? 'Отметьте галочками папки, по которым нужен бланк' : 'Нет товаров по выбранным условиям') + '</td></tr></tbody>') + '</table>' +
-    '<div style="font-size:12px;margin-top:6px">Всего позиций: ' + cnt + '. ' + (mx ? 'Заштрихованная клетка — такого цвета у модели нет. ' : '') + 'Если товара нет — ставьте 0, пустая клетка значит «не считали».</div>' +
-    '<div class="sign" style="grid-template-columns:1fr 1fr"><div class="s"><b>Пересчитал</b><div>подпись / расшифровка</div></div><div class="s"><b>Проверил</b><div>подпись / расшифровка</div></div></div></div></div>';
+    '<div class="paperwrap"><div class="paper inv-paper inv-mx"><div class="inv-title">ПЕРЕСЧЁТ СКЛАДА (шт.)</div>' +
+    '<div class="inv-fields"><div>Дата: <span></span></div><div>Склад: <span></span></div><div>Считал: <span></span></div></div>' +
+    '<table class="p-t"><thead><tr><th style="width:10mm">№</th><th>Наименование</th>' + colors.map(([, l]) => '<th class="mcol">' + l + '</th>').join('') +
+    '<th class="mcol">Итого</th><th style="width:22mm">Примечание</th></tr></thead>' +
+    (body || '<tbody><tr><td colspan="' + cols + '">' + (sel && !sel.length ? 'Отметьте галочками папки, по которым нужен бланк' : 'В выбранных папках нет товаров') + '</td></tr></tbody>') + '</table></div></div>';
 };
 /* загрузка таблицы: ищем колонку с названием и колонку «Факт/Остаток/Количество», сопоставляем с каталогом по названию */
 function invImport(rows) {
@@ -2476,8 +2457,6 @@ Object.assign(CH, {
     else sel = sel.filter(x => x !== p);
     DB.settings = Object.assign({}, DB.settings, { invFolders: tops.every(t => sel.indexOf(t) >= 0) ? null : sel }); commit();
   },
-  'inv-matrix': el => { DB.settings = Object.assign({}, DB.settings, { invMatrix: el.checked }); commit(); },
-  'inv-plan': el => { DB.settings = Object.assign({}, DB.settings, { invPlan: el.checked }); commit(); },
   'inv-break': el => { DB.settings = Object.assign({}, DB.settings, { invBreak: el.checked }); commit(); },
   'inv-load': el => {
     const f = el.files[0]; if (!f) return;

@@ -338,15 +338,15 @@ table.t{width:100%;border-collapse:collapse}
 /* бланк обхода: свои поля и «Лист N из M» внизу каждого листа (именованная страница) */
 @page invp{size:A4;margin:12mm 10mm 14mm 12mm;@bottom-right{content:"Лист " counter(page) " из " counter(pages);font-size:10px;font-family:"Segoe UI",Arial,sans-serif}}
 @media print{.inv-paper{page:invp}}
-/* бланк «цвета колонками»: клетка для цифры, нет цвета — штриховка, цифра программы мелко в углу */
-.inv-mx .p-t th.mcol{font-size:10.5px;letter-spacing:.02em;padding:4px 2px}
-.inv-mx .p-t tr.mrow td{height:9mm}
-.inv-mx .p-t td.no{white-space:nowrap;font-size:10.5px;padding:0 3px}
-.inv-mx .p-t td.mc{position:relative;border-left:1.5px solid #444A52}
-.inv-mx .p-t td.mc .pp{position:absolute;left:3px;top:2px;font-size:9px;color:#5B636E;line-height:1}
-.inv-mx .p-t td.na{background:repeating-linear-gradient(135deg,#fff 0 4px,#C9CED4 4px 5px);-webkit-print-color-adjust:exact;print-color-adjust:exact}
+/* бланк пересчёта (по образцу): заголовок по центру, серая шапка таблицы, клетки под ручку */
+.inv-title{text-align:center;font-weight:700;font-size:19px;letter-spacing:.01em;margin:2px 0 4px}
+.inv-mx .p-t th{background:#E4E6EA;font-size:12px;font-weight:700;color:#111316;padding:6px 3px}
+.inv-mx .p-t th.mcol{width:12.5mm}
+.inv-mx .p-t tr.mrow td{height:9mm;font-size:12px}
+.inv-mx .p-t td.no{text-align:center;font-size:11.5px;padding:0 2px}
+.inv-mx .p-t tr.g td{background:#EFF0F2;font-size:12.5px}
 .inv-paper tbody.newpage{break-before:page;page-break-before:always}
-.inv-fields{display:grid;grid-template-columns:1fr 1.4fr 1.4fr;gap:14px;margin:10px 0 8px;font-size:12.5px}
+.inv-fields{display:grid;grid-template-columns:1fr 1fr 1.3fr;gap:18px;margin:6px 0 10px;font-size:13px}
 .inv-fields div{display:flex;gap:6px;align-items:flex-end}
 .inv-fields span{flex:1;border-bottom:1px solid #111316;height:16px}
 .fold-head{display:flex;gap:10px;align-items:center;flex-wrap:wrap;margin-bottom:10px}
