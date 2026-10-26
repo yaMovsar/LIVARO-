@@ -1,0 +1,49 @@
+<!doctype html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>LIVARO — вход</title>
+<style>
+  :root{--bg:#F4F5F7;--card:#fff;--ink:#111316;--muted:#5B636E;--line:#DDE1E6;--accent:#1F4FB5;--err:#B3261E}
+  *{box-sizing:border-box}
+  body{margin:0;min-height:100vh;display:flex;align-items:center;justify-content:center;background:var(--bg);color:var(--ink);font-family:"Segoe UI",Arial,sans-serif;padding:16px}
+  .box{width:100%;max-width:380px;background:var(--card);border:1px solid var(--line);border-radius:16px;padding:32px 28px;box-shadow:0 8px 30px rgba(17,19,22,.06)}
+  .brand{font-weight:800;letter-spacing:.2em;font-size:26px}
+  .sub{color:var(--muted);font-size:14px;margin:4px 0 26px}
+  label{display:block;font-size:13px;font-weight:600;margin:14px 0 6px}
+  input{width:100%;font:inherit;font-size:16px;padding:12px 14px;border:1px solid var(--line);border-radius:10px;background:#fff;color:var(--ink)}
+  input:focus{outline:2px solid var(--accent);outline-offset:1px;border-color:var(--accent)}
+  button{width:100%;margin-top:22px;font:inherit;font-size:16px;font-weight:700;padding:13px;border:0;border-radius:10px;background:var(--accent);color:#fff;cursor:pointer}
+  button:disabled{opacity:.6;cursor:default}
+  .err{color:var(--err);font-size:14px;margin-top:14px;min-height:20px}
+</style>
+</head>
+<body>
+<form class="box" id="f" autocomplete="on">
+  <div class="brand">LIVARO</div>
+  <div class="sub">Учёт производства — вход для сотрудников</div>
+  <label for="login">Логин</label>
+  <input id="login" name="username" autocomplete="username" autocapitalize="none" required autofocus>
+  <label for="pass">Пароль</label>
+  <input id="pass" name="password" type="password" autocomplete="current-password" required>
+  <button id="go">Войти</button>
+  <div class="err" id="err" role="alert"></div>
+</form>
+<script>
+  document.getElementById('f').addEventListener('submit', async e => {
+    e.preventDefault();
+    const b = document.getElementById('go'), err = document.getElementById('err');
+    b.disabled = true; err.textContent = '';
+    try {
+      const r = await fetch('/api/login', { method: 'POST', headers: { 'Content-Type': 'application/json', 'X-LIVARO': '1' },
+        body: JSON.stringify({ login: document.getElementById('login').value, password: document.getElementById('pass').value }) });
+      const d = await r.json().catch(() => ({}));
+      if (r.ok) { location.href = '/LIVARO.html'; return; }
+      err.textContent = d.error || 'Не удалось войти';
+    } catch (x) { err.textContent = 'Нет связи с сервером. Проверьте интернет.'; }
+    b.disabled = false;
+  });
+</script>
+</body>
+</html>

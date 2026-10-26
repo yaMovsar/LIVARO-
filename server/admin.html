@@ -1,0 +1,146 @@
+<!doctype html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>LIVARO — сотрудники и журнал</title>
+<style>
+  :root{--bg:#F4F5F7;--card:#fff;--ink:#111316;--muted:#5B636E;--line:#DDE1E6;--accent:#1F4FB5;--accent-bg:#E8EEFA;--err:#B3261E;--ok:#1E7A46}
+  *{box-sizing:border-box}
+  body{margin:0;background:var(--bg);color:var(--ink);font-family:"Segoe UI",Arial,sans-serif;font-size:14px}
+  .wrap{max-width:1100px;margin:0 auto;padding:24px 16px 60px}
+  .top{display:flex;align-items:center;gap:14px;flex-wrap:wrap;margin-bottom:18px}
+  .brand{font-weight:800;letter-spacing:.2em;font-size:20px}
+  .top a{margin-left:auto}
+  h1{font-size:24px;margin:0 0 4px}
+  h2{font-size:17px;margin:0 0 12px}
+  .hint{color:var(--muted);font-size:13px}
+  .card{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:18px;margin-top:16px;overflow:auto}
+  table{width:100%;border-collapse:collapse}
+  th{text-align:left;font-size:11.5px;text-transform:uppercase;letter-spacing:.04em;color:var(--muted);padding:8px;border-bottom:1px solid var(--line)}
+  td{padding:9px 8px;border-bottom:1px solid var(--line);vertical-align:top}
+  tr:last-child td{border-bottom:0}
+  input,select{font:inherit;padding:8px 10px;border:1px solid var(--line);border-radius:8px;background:#fff;min-height:38px}
+  .btn{font:inherit;padding:8px 14px;border:1px solid var(--line);border-radius:8px;background:#fff;cursor:pointer;min-height:38px;color:var(--ink);text-decoration:none;display:inline-flex;align-items:center}
+  .btn.pri{background:var(--accent);border-color:var(--accent);color:#fff;font-weight:600}
+  .btn.sm{padding:4px 10px;min-height:30px;font-size:13px}
+  .form{display:grid;grid-template-columns:repeat(auto-fill,minmax(180px,1fr));gap:10px;align-items:end}
+  .form label{display:flex;flex-direction:column;gap:4px;font-size:12.5px;font-weight:600}
+  .off td{color:var(--muted)}
+  .tag{display:inline-block;padding:2px 8px;border-radius:20px;font-size:12px;background:var(--accent-bg);color:var(--accent)}
+  .act-create{color:var(--ok)}.act-delete{color:var(--err)}
+  .chg{font-size:12.5px;color:var(--muted)}
+  .chg b{color:var(--ink);font-weight:600}
+  #msg{position:fixed;left:50%;bottom:20px;transform:translateX(-50%);background:#111316;color:#fff;padding:10px 16px;border-radius:10px;display:none}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <div class="top"><span class="brand">LIVARO</span><span class="hint" id="me"></span><a class="btn" href="/LIVARO.html">← В программу</a></div>
+  <h1>Сотрудники и журнал изменений</h1>
+  <div class="hint">Видит только руководитель. Пока у всех сотрудников одинаковые права на работу с данными; разные права по ролям — следующий шаг.</div>
+
+  <div class="card">
+    <h2>Сотрудники</h2>
+    <table><thead><tr><th>Логин</th><th>Имя</th><th>Роль</th><th>Доступ</th><th></th></tr></thead><tbody id="users"></tbody></table>
+  </div>
+
+  <div class="card">
+    <h2>Добавить сотрудника</h2>
+    <div class="form">
+      <label>Логин<input id="n-login" autocapitalize="none" placeholder="например: magomed"></label>
+      <label>Имя<input id="n-name" placeholder="Магомед, склад"></label>
+      <label>Роль<select id="n-role"></select></label>
+      <label>Пароль (от 6 символов)<input id="n-pass"></label>
+      <button class="btn pri" id="add">Добавить</button>
+    </div>
+  </div>
+
+  <div class="card">
+    <h2>Журнал изменений</h2>
+    <div class="hint" style="margin-bottom:8px">Кто, когда и что изменил. Последние записи сверху.</div>
+    <table><thead><tr><th style="width:150px">Когда</th><th style="width:140px">Кто</th><th>Что</th></tr></thead><tbody id="audit"></tbody></table>
+    <div style="margin-top:10px"><button class="btn" id="more">Показать ещё</button></div>
+  </div>
+</div>
+<div id="msg" role="status"></div>
+<script>
+const ROLES = { admin: 'Руководитель (все права)', accountant: 'Бухгалтер', manager: 'Менеджер продаж', storekeeper: 'Склад' };
+const esc = s => String(s == null ? '' : s).replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' })[c]);
+const $ = s => document.querySelector(s);
+const msg = t => { const m = $('#msg'); m.textContent = t; m.style.display = 'block'; clearTimeout(msg.t); msg.t = setTimeout(() => m.style.display = 'none', 3500); };
+async function api(url, data) {
+  const r = await fetch(url, data ? { method: 'POST', headers: { 'Content-Type': 'application/json', 'X-LIVARO': '1' }, body: JSON.stringify(data) } : {});
+  if (r.status === 401) { location.href = '/login.html'; throw new Error('Нужно войти'); }
+  const d = await r.json().catch(() => ({}));
+  if (!r.ok) throw new Error(d.error || 'Ошибка');
+  return d;
+}
+const roleSel = (v, id) => '<select data-role="' + id + '">' + Object.keys(ROLES).map(k => '<option value="' + k + '"' + (k === v ? ' selected' : '') + '>' + ROLES[k] + '</option>').join('') + '</select>';
+let USERS = [];
+async function loadUsers() {
+  USERS = (await api('/api/users')).users;
+  $('#users').innerHTML = USERS.map(u => '<tr class="' + (u.active ? '' : 'off') + '"><td><b>' + esc(u.login) + '</b></td><td>' + esc(u.name) + '</td><td>' + roleSel(u.role, u.id) + '</td>' +
+    '<td>' + (u.active ? '<span class="tag">работает</span>' : 'отключён') + '</td><td style="white-space:nowrap"><button class="btn sm" data-pass="' + u.id + '">Новый пароль</button> ' +
+    '<button class="btn sm" data-active="' + u.id + '" data-v="' + (u.active ? '0' : '1') + '">' + (u.active ? 'Отключить' : 'Включить') + '</button></td></tr>').join('');
+}
+$('#n-role').innerHTML = Object.keys(ROLES).map(k => '<option value="' + k + '"' + (k === 'manager' ? ' selected' : '') + '>' + ROLES[k] + '</option>').join('');
+document.addEventListener('change', async e => {
+  const id = e.target.dataset.role; if (!id) return;
+  try { await api('/api/users/' + id, { role: e.target.value }); msg('Роль изменена'); } catch (x) { msg(x.message); }
+  loadUsers();
+});
+document.addEventListener('click', async e => {
+  const t = e.target;
+  try {
+    if (t.dataset.pass) {
+      const p = prompt('Новый пароль для «' + USERS.find(u => u.id == t.dataset.pass).login + '» (от 6 символов):'); if (!p) return;
+      await api('/api/users/' + t.dataset.pass, { password: p }); msg('Пароль изменён. Сотруднику нужно войти заново.');
+    }
+    if (t.dataset.active) { await api('/api/users/' + t.dataset.active, { active: t.dataset.v === '1' }); msg(t.dataset.v === '1' ? 'Доступ включён' : 'Доступ отключён'); loadUsers(); }
+    if (t.id === 'add') {
+      await api('/api/users', { login: $('#n-login').value, name: $('#n-name').value, role: $('#n-role').value, password: $('#n-pass').value });
+      ['#n-login', '#n-name', '#n-pass'].forEach(s => $(s).value = ''); msg('Сотрудник добавлен. Передайте ему логин и пароль.'); loadUsers();
+    }
+    if (t.id === 'more') loadAudit(true);
+  } catch (x) { msg(x.message); }
+});
+
+/* журнал: понятные подписи записей */
+const COLL = { clients: 'Клиент', orders: 'Заказ', payments: 'Оплата', templates: 'Шаблон', trash: 'Удалённые', installments: 'Рассрочка', stockMoves: 'Склад', meta: '' };
+const META = { cat: 'Каталог товаров', settings: 'Настройки', counters: 'Нумерация документов' };
+const STATUS = { ordered: 'оформлен', shipped: 'отгружен', cancelled: 'отменён', received: 'получено', pending: 'ждём' };
+const fmt = n => String(Math.round(n || 0)).replace(/\B(?=(\d{3})+(?!\d))/g, ' ');
+function label(r) {
+  const d = r.after || r.before || {};
+  if (r.coll === 'meta') return META[r.doc_id] || r.doc_id;
+  if (r.coll === 'clients') return 'Клиент «' + (d.name || '?') + '»';
+  if (r.coll === 'orders') return 'Заказ № ' + (d.no || '?') + (d.total ? ' на ' + fmt(d.total) + ' ₽' : '');
+  if (r.coll === 'payments') return 'Оплата ' + fmt(d.amount) + ' ₽';
+  if (r.coll === 'installments') return 'Рассрочка Р-' + (d.no || '?');
+  if (r.coll === 'stockMoves') return 'Склад: ' + (d.name || '') + ' ' + (d.q > 0 ? '+' : '') + (d.q || 0);
+  if (r.coll === 'trash') return 'В «Удалённых»: ' + (d.label || d.kind || '');
+  if (r.coll === 'templates') return 'Шаблон «' + (d.t || '') + '»';
+  return COLL[r.coll] + ' ' + r.doc_id;
+}
+const short = v => v == null ? '—' : typeof v === 'object' ? '…' : (STATUS[v] || String(v)).slice(0, 40);
+function diff(r) {
+  if (r.action !== 'update' || !r.before || !r.after || r.coll === 'meta' && r.doc_id === 'cat') return '';
+  const keys = [...new Set(Object.keys(r.before).concat(Object.keys(r.after)))].filter(k => JSON.stringify(r.before[k]) !== JSON.stringify(r.after[k]));
+  return keys.slice(0, 6).map(k => '<b>' + esc(k) + '</b>: ' + esc(short(r.before[k])) + ' → ' + esc(short(r.after[k]))).join('; ');
+}
+const ACT = { create: ['добавлено', 'act-create'], update: ['изменено', ''], delete: ['удалено', 'act-delete'] };
+let lastId = null;
+async function loadAudit(more) {
+  const rows = (await api('/api/audit?limit=100' + (more && lastId ? '&before=' + lastId : ''))).rows;
+  if (rows.length) lastId = rows[rows.length - 1].id;
+  const html = rows.map(r => '<tr><td>' + new Date(r.at).toLocaleString('ru-RU', { day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit' }) + '</td><td>' + esc(r.name || r.login || '—') + '</td>' +
+    '<td><span class="' + ACT[r.action][1] + '">' + ACT[r.action][0] + '</span> · ' + esc(label(r)) + '<div class="chg">' + diff(r) + '</div></td></tr>').join('');
+  if (more) $('#audit').insertAdjacentHTML('beforeend', html); else $('#audit').innerHTML = html || '<tr><td colspan="3" class="hint">Пока изменений нет</td></tr>';
+  $('#more').style.display = rows.length < 100 ? 'none' : '';
+}
+api('/api/me').then(d => { $('#me').textContent = 'Вы вошли как ' + (d.user.name || d.user.login); });
+loadUsers().catch(x => msg(x.message)); loadAudit().catch(x => msg(x.message));
+</script>
+</body>
+</html>

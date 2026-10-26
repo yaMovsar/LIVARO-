@@ -1,0 +1,19 @@
+{
+  "name": "livaro-online",
+  "version": "0.1.0",
+  "private": true,
+  "description": "LIVARO — учёт мебельного производства, онлайн-версия (сервер + PostgreSQL)",
+  "main": "server/index.js",
+  "scripts": {
+    "start": "node server/index.js",
+    "test": "node server/test/server_test.js && node server/test/sync_test.js"
+  },
+  "engines": { "node": ">=20" },
+  "dependencies": {
+    "pg": "^8.13.0"
+  },
+  "devDependencies": {
+    "@electric-sql/pglite": "^0.2.17",
+    "jsdom": "24.1.0"
+  }
+}
