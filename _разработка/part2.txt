@@ -1,0 +1,34 @@
+<!-- ============ ПЕЧАТЬ КЛИЕНТУ ============ -->
+<section class="view" id="pc"><div class="noprint" style="display:flex;justify-content:center;gap:10px;padding:20px 16px 0"><button class="btn" data-go="inv">← Назад к накладной</button><button class="btn pri" data-print="1">Распечатать</button></div><div class="paperwrap"><div class="paper">
+  <div class="p-head"><div><div class="brand">LIVARO</div></div>
+    <div style="text-align:right;font-size:15px"><b>Накладная № <span class="p-no"></span></b> от <span class="p-date"></span></div></div>
+  <div class="kv">
+    <div class="k">Поставщик</div><div><b>LIVARO</b></div>
+    <div class="k">Покупатель</div><div><b class="p-client"></b></div>
+  </div>
+  <table class="p-t"><thead><tr><th style="width:20px">№</th><th>Наименование</th><th class="num" style="width:44px">Кол-во</th><th class="num" style="width:74px">Цена, ₽</th><th class="num" style="width:82px">Сумма, ₽</th></tr></thead><tbody id="pc-body"></tbody></table>
+  <div style="display:flex;gap:16px;align-items:flex-start">
+  <div style="font-size:12px;flex:1 1 0" id="pc-words"></div>
+  <div class="bal" style="flex:0 0 58%;box-sizing:border-box">
+    <div style="font-weight:700;margin-bottom:2px">Состояние расчётов с LIVARO</div>
+    <div class="line"><span>Баланс до отгрузки</span><span id="pc-before"></span></div>
+    <div class="line"><span>Сумма этой накладной</span><span id="pc-sum"></span></div>
+    <div class="line"><span>Оплачено при отгрузке</span><span id="pc-pay"></span></div>
+    <div class="line" style="font-size:14px;font-weight:700;border-top:1px solid #111316;padding-top:4px;margin-top:4px"><span>Баланс после отгрузки</span><span id="pc-after"></span></div>
+    <div style="font-size:10px;color:#3A414A;margin-top:2px">Аванс — ваши средства у LIVARO в счёт будущих отгрузок. Долг — сумма к оплате LIVARO.</div>
+  </div></div>
+  <div class="sign" style="grid-template-columns:1fr 1fr"><div class="s"><b>Отпустил (LIVARO)</b><div>подпись / расшифровка</div></div><div class="s"><b>Получил (водитель покупателя), претензий к количеству и качеству нет</b><div>подпись / расшифровка</div></div></div>
+</div></div></section>
+
+<!-- ============ ПЕЧАТЬ ГРУЗЧИКУ ============ -->
+<section class="view" id="pl"><div class="noprint" style="display:flex;justify-content:center;gap:10px;padding:20px 16px 0"><button class="btn" data-go="inv">← Назад к накладной</button><button class="btn pri" data-print="1">Распечатать</button></div><div class="paperwrap"><div class="paper">
+  <div class="p-head"><div><div class="brand" style="font-size:18px">LIVARO</div><div style="font-size:16px;font-weight:700;margin-top:4px">Лист погрузки к накладной № <span class="p-no"></span> от <span class="p-date"></span></div></div>
+    <div style="font-size:11px;font-weight:700;letter-spacing:.06em;border:2px solid #111316;padding:4px 8px">ДЛЯ ГРУЗЧИКА</div></div>
+  <div style="border:2px solid #111316;padding:8px 12px;display:flex;justify-content:space-between;gap:20px;font-size:14px">
+    <div>Клиент: <b style="font-size:16px" class="p-client"></b></div>
+    <div>Шкафов: <b style="font-size:16px" id="pl-cnt"></b></div>
+  </div>
+  <table class="p-t"><thead><tr><th style="width:20px">№</th><th>Что грузить</th><th class="num" style="width:50px">Кол-во</th><th style="width:70px;text-align:center">Погружено</th></tr></thead><tbody id="pl-body"></tbody></table>
+  <div class="sign" style="grid-template-columns:1fr 1fr 1fr"><div class="s"><b>Выдал со склада</b><div>подпись / расшифровка</div></div><div class="s"><b>Погрузил (грузчик)</b><div>подпись / расшифровка</div></div><div class="s"><b>Принял (водитель)</b><div>подпись / расшифровка</div></div></div>
+</div></div></section>
+

@@ -1,0 +1,66 @@
+<!doctype html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<title>Этикетки на коробки — пример</title>
+<style>
+  @page { size: A4; margin: 0; }
+  * { box-sizing: border-box; }
+  body { margin: 0; background: #E9EBEE; font-family: "Segoe UI", Arial, sans-serif; color: #111316; }
+  .note { max-width: 210mm; margin: 18px auto 10px; font-size: 14px; line-height: 1.5; color: #3A414A; padding: 0 4px; }
+  .note b { color: #111316; }
+  .sheet { width: 210mm; height: 297mm; margin: 0 auto 24px; background: #fff; box-shadow: 0 2px 12px rgba(0,0,0,.15);
+           display: grid; grid-template-columns: 1fr 1fr; grid-template-rows: repeat(4, 1fr); }
+  .lab { border: 1px dashed #B5BBC2; padding: 7mm 7mm 6mm; display: flex; flex-direction: column; gap: 2mm; position: relative; }
+  .top { display: flex; justify-content: space-between; align-items: baseline; }
+  .brand { font-weight: 800; letter-spacing: .18em; font-size: 13px; }
+  .date { font-size: 11px; color: #3A414A; }
+  .ord { font-size: 26px; font-weight: 800; line-height: 1.1; }
+  .cli { font-size: 17px; font-weight: 700; }
+  .cab { font-size: 13px; border-top: 1.5px solid #111316; padding-top: 2mm; margin-top: 1mm; }
+  .what { font-size: 13px; color: #2A2F36; line-height: 1.35; }
+  .num { position: absolute; right: 7mm; bottom: 6mm; text-align: right; }
+  .num small { display: block; font-size: 10px; color: #3A414A; text-transform: uppercase; letter-spacing: .05em; }
+  .num b { font-size: 34px; line-height: 1; }
+  .empty { background: repeating-linear-gradient(45deg,#fff,#fff 8px,#F4F5F7 8px,#F4F5F7 16px); }
+  @media print { body { background: #fff; } .note { display: none; } .sheet { box-shadow: none; margin: 0; } }
+</style>
+</head>
+<body>
+<div class="note">
+  <b>Пример этикеток на коробки (макет).</b> Заказ № 15 для Шамиля: 2 шкафа, всего 7 коробок. Лист А4 режется на 8 этикеток по пунктиру, наклейки А4 на 8 частей продаются готовыми.
+  Программа сама посчитает коробки по каждому товару (например, у корпуса Милан 6х их 2) и пронумерует «1 из 7, 2 из 7…». Для печати: Ctrl+P.
+</div>
+<div class="sheet">
+  <div class="lab"><div class="top"><span class="brand">LIVARO</span><span class="date">24.10.2026</span></div>
+    <div class="ord">Заказ № 15</div><div class="cli">Шамиль BUGLAN</div>
+    <div class="cab"><b>Шкаф Айша 6х, белый</b></div><div class="what">Корпус Милан 6х белый, трубы<br>коробка 1 из 2</div>
+    <div class="num"><small>Место</small><b>1 / 7</b></div></div>
+  <div class="lab"><div class="top"><span class="brand">LIVARO</span><span class="date">24.10.2026</span></div>
+    <div class="ord">Заказ № 15</div><div class="cli">Шамиль BUGLAN</div>
+    <div class="cab"><b>Шкаф Айша 6х, белый</b></div><div class="what">Корпус Милан 6х белый, трубы<br>коробка 2 из 2</div>
+    <div class="num"><small>Место</small><b>2 / 7</b></div></div>
+  <div class="lab"><div class="top"><span class="brand">LIVARO</span><span class="date">24.10.2026</span></div>
+    <div class="ord">Заказ № 15</div><div class="cli">Шамиль BUGLAN</div>
+    <div class="cab"><b>Шкаф Айша 6х, белый</b></div><div class="what">Двери Айша С-образные, белые — 6 шт</div>
+    <div class="num"><small>Место</small><b>3 / 7</b></div></div>
+  <div class="lab"><div class="top"><span class="brand">LIVARO</span><span class="date">24.10.2026</span></div>
+    <div class="ord">Заказ № 15</div><div class="cli">Шамиль BUGLAN</div>
+    <div class="cab"><b>Шкаф Айша 6х, белый</b></div><div class="what">Карниз на 6 дв. + фурнитура<br>Ручки плоские 60 см золото — 6 шт</div>
+    <div class="num"><small>Место</small><b>4 / 7</b></div></div>
+  <div class="lab"><div class="top"><span class="brand">LIVARO</span><span class="date">24.10.2026</span></div>
+    <div class="ord">Заказ № 15</div><div class="cli">Шамиль BUGLAN</div>
+    <div class="cab"><b>Шкаф Элегант 4х, белый</b></div><div class="what">Корпус Элегант (Премиум 2) белый<br>коробка 1 из 2</div>
+    <div class="num"><small>Место</small><b>5 / 7</b></div></div>
+  <div class="lab"><div class="top"><span class="brand">LIVARO</span><span class="date">24.10.2026</span></div>
+    <div class="ord">Заказ № 15</div><div class="cli">Шамиль BUGLAN</div>
+    <div class="cab"><b>Шкаф Элегант 4х, белый</b></div><div class="what">Корпус Элегант (Премиум 2) белый<br>коробка 2 из 2</div>
+    <div class="num"><small>Место</small><b>6 / 7</b></div></div>
+  <div class="lab"><div class="top"><span class="brand">LIVARO</span><span class="date">24.10.2026</span></div>
+    <div class="ord">Заказ № 15</div><div class="cli">Шамиль BUGLAN</div>
+    <div class="cab"><b>Шкаф Элегант 4х, белый</b></div><div class="what">Двери + фасад Элегант, белые — 4 шт<br>Ручки корона 30 см серебро — 4 шт</div>
+    <div class="num"><small>Место</small><b>7 / 7</b></div></div>
+  <div class="lab empty"></div>
+</div>
+</body>
+</html>

@@ -1,0 +1,419 @@
+<!doctype html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>LIVARO — макет учёта</title>
+<style>
+body{margin:0;background:#F4F5F7;color:#16191D;font-family:"Segoe UI",Arial,sans-serif}
+a{color:#1E56B3}
+.tabs{position:sticky;top:0;z-index:5;background:#16191D;padding:10px 16px;display:flex;flex-wrap:wrap;gap:8px;align-items:center}
+.tabs b{color:#fff;margin-right:12px;font-size:14px}
+.tab{border:1px solid #4A515B;background:#2A2F36;color:#E6E8EB;border-radius:8px;padding:9px 14px;font:inherit;font-size:14px;cursor:pointer}
+.tab.on{background:#1E56B3;border-color:#1E56B3;color:#fff;font-weight:600}
+.view{display:none}.view.on{display:block}
+.app{display:flex;flex-wrap:wrap;min-height:calc(100vh - 60px)}
+.side{flex:1 1 220px;max-width:100%;box-sizing:border-box;background:#fff;border-right:1px solid #DDE1E6;padding:24px 14px}
+.logo{padding:0 14px 22px}.logo div:first-child{font-size:22px;font-weight:800;letter-spacing:.14em}.logo div:last-child{font-size:12px;color:#5B636E;margin-top:2px}
+.nav{display:block;padding:11px 14px;border-radius:8px;font-size:14px;color:#3A414A;text-decoration:none;cursor:pointer}
+.nav:hover{background:#F0F2F5}.nav.on{background:#E8EFFA;color:#1E56B3;font-weight:600}
+.nav .cnt{float:right;background:#FDEEDC;color:#8A3D00;border-radius:999px;padding:0 8px;font-size:12px;font-weight:600}
+.main{flex:999 1 560px;min-width:0;box-sizing:border-box;padding:28px 32px 40px;display:flex;flex-direction:column;gap:20px}
+.head{display:flex;flex-wrap:wrap;align-items:flex-end;justify-content:space-between;gap:16px}
+h1{margin:0;font-size:26px}h2{margin:0 0 14px;font-size:16px}
+.crumb{font-size:13px;color:#5B636E;margin-bottom:4px}
+.chip{font-size:12px;font-weight:600;padding:4px 10px;border-radius:999px;background:#EEF0F3;color:#3A414A;margin-left:10px;vertical-align:middle}
+.btns{display:flex;flex-wrap:wrap;gap:10px}
+.btn{min-height:44px;padding:0 16px;border:1px solid #CDD3DA;border-radius:8px;background:#fff;color:#16191D;font:inherit;font-size:14px;cursor:pointer}
+.btn.pri{background:#1E56B3;border-color:#1E56B3;color:#fff;font-weight:600}
+.btn.sm{min-height:36px;padding:0 12px;font-size:13px}
+.card{background:#fff;border:1px solid #DDE1E6;border-radius:12px;padding:20px 22px}
+.row{display:flex;flex-wrap:wrap;gap:20px;align-items:flex-start}
+.grow{flex:999 1 560px;min-width:0;display:flex;flex-direction:column;gap:20px}
+.aside{flex:1 1 300px;min-width:0;display:flex;flex-direction:column;gap:20px}
+.form{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:14px 16px}
+.fld{display:flex;flex-direction:column;gap:6px;font-size:12px;font-weight:600;color:#5B636E}
+.inp{font:inherit;font-size:14px;color:#16191D;padding:10px 12px;border:1px solid #CDD3DA;border-radius:8px;min-height:44px;box-sizing:border-box;width:100%;background:#fff}
+.scroll{overflow-x:auto}
+table.t{width:100%;border-collapse:collapse;min-width:560px}
+.t th{padding:10px 12px;font-size:12px;color:#5B636E;text-align:left;border-bottom:1px solid #DDE1E6;white-space:nowrap}
+.t td{padding:12px;font-size:14px;border-bottom:1px solid #EBEEF1;vertical-align:middle}
+.num{text-align:right!important;white-space:nowrap}
+.sub{font-size:12px;color:#5B636E;margin-top:2px}
+.line{display:flex;justify-content:space-between;gap:12px;font-size:14px;margin:7px 0}
+.tot{border-top:1px solid #DDE1E6;padding-top:10px;font-size:18px;font-weight:700}
+.debt{color:#A84B00}.adv{color:#0F6B4F}.muted{color:#5B636E}
+.tiles{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:16px}
+.tile .l{font-size:13px;color:#5B636E}.tile .v{font-size:28px;font-weight:700;margin-top:6px}.tile .h{font-size:12px;color:#5B636E;margin-top:4px}
+.tag{display:inline-block;font-size:12px;font-weight:600;padding:3px 8px;border-radius:999px;white-space:nowrap}
+.tag.d{background:#FDEEDC;color:#8A3D00}.tag.a{background:#DDF3EA;color:#0B5A42}.tag.z{background:#EEF0F3;color:#3A414A}.tag.w{background:#FFF4C2;color:#6B5200}
+.opt{display:flex;gap:10px;align-items:flex-start;border:1px solid #CDD3DA;border-radius:10px;padding:12px 14px;cursor:pointer;margin-bottom:8px;font-size:14px}
+.opt.on{border-color:#1E56B3;background:#F3F7FD}
+.opt input{margin-top:3px}
+.opt .sub{margin-top:3px}
+.hint{font-size:12px;color:#5B636E;line-height:1.5}
+.pr{width:110px;min-height:38px;padding:6px 10px;text-align:right}
+.pr.chg{border-color:#D98A3D;background:#FFF8EE;font-weight:600}
+.step{font-size:13px;font-weight:700;color:#3A414A;margin:18px 0 8px}.step:first-child{margin-top:0}
+.ch{min-height:42px;padding:0 14px;border:1px solid #CDD3DA;border-radius:8px;background:#fff;color:#3A414A;font:inherit;font-size:14px;cursor:pointer}
+.ch.on{border-color:#1E56B3;background:#E8EFFA;color:#1E56B3;font-weight:600}
+.ch small{display:block;font-size:11px;font-weight:400;color:#5B636E}
+.tpl{display:block;width:100%;text-align:left;padding:12px 14px;margin-bottom:8px}
+.comp{margin:0;padding-left:20px;font-size:14px;line-height:1.8}
+.preview{background:#F6F7F9;border:1px solid #DDE1E6;border-radius:8px;padding:12px 14px;font-size:14px;font-weight:600}
+/* печатные формы */
+.paperwrap{padding:30px 16px;display:flex;justify-content:center}
+.paper{width:794px;min-height:1123px;max-width:100%;box-sizing:border-box;padding:52px 60px;background:#fff;color:#111316;box-shadow:0 2px 12px rgba(0,0,0,.12);display:flex;flex-direction:column;gap:20px}
+.p-head{display:flex;justify-content:space-between;align-items:flex-end;gap:24px;border-bottom:2px solid #111316;padding-bottom:14px}
+.brand{font-size:30px;font-weight:800;letter-spacing:.18em;line-height:1}
+.p-t{width:100%;border-collapse:collapse}
+.p-t th{padding:8px 10px;font-size:12px;text-align:left;border:1px solid #444A52;background:#F1F2F4}
+.p-t td{padding:9px 10px;font-size:13px;border:1px solid #444A52;vertical-align:top}
+.kv{display:grid;grid-template-columns:150px 1fr;gap:6px 12px;font-size:13px}.kv .k{color:#3A414A}
+.bal{border:2px solid #111316;padding:14px 16px;font-size:13px}
+.bal .line{font-size:13px;margin:5px 0}
+.sign{margin-top:auto;display:grid;gap:30px;font-size:13px}
+.sign .s b{display:block;margin-bottom:34px}.sign .s div{border-top:1px solid #111316;padding-top:4px;font-size:11px;color:#5B636E}
+.box{width:18px;height:18px;border:1.5px solid #111316;display:inline-block}
+.p-t tr.g td{background:#F1F2F4;font-weight:700;font-size:14px}
+.p-t tr.c td{font-size:12px;padding:5px 10px;color:#2A2F36}
+.p-t tr.c td.nm{padding-left:28px}
+@media print{.tabs{display:none}.view{display:none!important}.view.on{display:block!important}.paperwrap{padding:0}.paper{box-shadow:none}}
+</style>
+</head>
+<body>
+<div class="tabs">
+  <b>Макет LIVARO</b>
+  <button class="tab on" data-v="inv">Новая отгрузка</button>
+  <button class="tab" data-v="build">Собрать шкаф</button>
+  <button class="tab" data-v="clients">Клиенты и баланс</button>
+  <button class="tab" data-v="card">Карточка клиента</button>
+  <button class="tab" data-v="drivers">Деньги у водителей</button>
+  <button class="tab" data-v="pc">Печать: клиенту</button>
+  <button class="tab" data-v="pl">Печать: грузчику</button>
+</div>
+
+<!-- ============ НОВАЯ ОТГРУЗКА ============ -->
+<section class="view on" id="inv"><div class="app">
+  <nav class="side"><div class="logo"><div>LIVARO</div><div>Учёт производства</div></div>
+    <a class="nav on" data-go="inv">Отгрузки</a><a class="nav" data-go="clients">Клиенты и баланс</a><a class="nav" data-go="drivers">Деньги у водителей <span class="cnt">2</span></a><a class="nav">Оплаты</a><a class="nav">Товары и цены</a><a class="nav">Отчёты</a></nav>
+  <main class="main">
+    <div class="head"><div><div class="crumb">Отгрузки / Новая</div><h1>Накладная № 0142<span class="chip">Черновик</span></h1></div>
+      <div class="btns"><button class="btn" data-go="pc">Печать: клиенту</button><button class="btn" data-go="pl">Печать: грузчику</button><button class="btn pri">Провести отгрузку</button></div></div>
+    <div class="row">
+      <div class="grow">
+        <div class="card"><h2>Клиент и машина</h2><div class="form">
+          <label class="fld" style="grid-column:span 3">Клиент<input class="inp" value="ТД «Комфорт»"></label>
+          <label class="fld">Водитель<input class="inp" value="Иван"></label>
+          <label class="fld">Телефон водителя<input class="inp" value="+7 900 444-55-66"></label>
+          <label class="fld">Госномер машины<input class="inp" value="А123ВС"></label>
+        </div><div class="hint" style="margin-top:10px">Водитель и номер подставятся сами, если эта машина уже приезжала от клиента.</div></div>
+        <div class="card"><div style="display:flex;justify-content:space-between;gap:12px;flex-wrap:wrap"><h2>Товары</h2><input class="inp" style="max-width:320px" placeholder="Начните вводить название товара…"></div>
+          <div class="scroll"><table class="t" style="min-width:640px"><thead><tr><th>№</th><th>Наименование</th><th class="num">Кол-во</th><th class="num">По прайсу, ₽</th><th class="num">Цена клиенту, ₽</th><th class="num">Сумма, ₽</th></tr></thead><tbody>
+            <tr><td>1</td><td><b>Шкаф Айша 6-дв</b>, белый, по бокам трубы<div class="sub">корпус Милан 6х · двери Айша С-образ × 6 · карниз на 6 дв. · ручки плоские 60 см золото × 6</div></td><td class="num">1 шт</td><td class="num muted">34 500</td><td class="num"><input class="inp pr" value="34 500" aria-label="Цена клиенту"></td><td class="num"><b>34 500</b></td></tr>
+            <tr><td>2</td><td><b>Шкаф Элегант 6-дв</b>, белый<div class="sub">корпус Элегант (Премиум 2) · двери + фасад Элегант × 6 · карниз на 6 дв. · ручки корона 30 см серебро × 6</div></td><td class="num">1 шт</td><td class="num muted">52 000</td><td class="num"><input class="inp pr chg" value="50 000" aria-label="Цена клиенту"><div class="sub debt">−2 000 от прайса</div></td><td class="num"><b>50 000</b></td></tr>
+            <tr><td>3</td><td><b>Комод Элегант 98 × 98</b>, белый</td><td class="num">1 шт</td><td class="num muted">11 000</td><td class="num"><input class="inp pr" value="11 000" aria-label="Цена клиенту"></td><td class="num"><b>11 000</b></td></tr>
+          </tbody></table></div>
+          <div class="hint" style="margin-top:10px">Цена клиенту по умолчанию берётся из прайса, её можно исправить прямо в строке. Программа запомнит изменённую цену: в следующий раз для ТД «Комфорт» Элегант 6-дв сразу подставится по 50 000. Прайс и скидка в накладную клиента не печатаются.</div>
+          <div style="display:flex;justify-content:space-between;gap:20px;flex-wrap:wrap;margin-top:14px">
+            <div class="btns"><button class="btn" style="border-style:dashed;color:#1E56B3;font-weight:600" data-go="build">+ Шкаф</button><button class="btn" style="border-style:dashed;color:#1E56B3;font-weight:600">+ Товар</button><button class="btn" style="border-style:dashed;color:#1E56B3;font-weight:600">+ Своя строка</button></div>
+            <div style="flex:0 1 300px"><div class="line tot" style="border:0"><span>Сумма накладной</span><span>95 500 ₽</span></div></div>
+          </div>
+        </div>
+      </div>
+      <div class="aside">
+        <div class="card"><h2>Оплата при отгрузке</h2>
+          <label class="opt on"><input type="radio" name="pay" checked><div><b>Без оплаты</b><div class="sub">Сумма спишется с аванса или добавится к долгу</div></div></label>
+          <label class="opt"><input type="radio" name="pay"><div><b>Оплатил сразу</b><div class="sub">Наличные в кассу или перевод — укажете сумму</div></div></label>
+          <label class="opt"><input type="radio" name="pay"><div><b>Деньги передаст водитель</b><div class="sub">Сумма попадёт в «Деньги у водителей», пока вы её не получите</div></div></label>
+        </div>
+        <div class="card"><h2>Баланс клиента</h2>
+          <div class="line"><span class="muted">До отгрузки</span><span class="adv">аванс 416 780 ₽</span></div>
+          <div class="line"><span class="muted">Эта накладная</span><span>−95 500 ₽</span></div>
+          <div class="line"><span class="muted">Оплата сейчас</span><span>0 ₽</span></div>
+          <div class="line tot adv"><span>После</span><span>аванс 321 280 ₽</span></div>
+          <div class="hint">Аванс — деньги клиента у вас, на них он ещё заберёт товар. Долг — клиент должен вам.</div>
+          <a class="nav" style="padding:10px 0 0;color:#1E56B3" data-go="card">История расчётов клиента →</a></div>
+      </div>
+    </div>
+  </main>
+</div></section>
+
+<!-- ============ КЛИЕНТЫ И БАЛАНС ============ -->
+<section class="view" id="clients"><div class="app">
+  <nav class="side"><div class="logo"><div>LIVARO</div><div>Учёт производства</div></div>
+    <a class="nav" data-go="inv">Отгрузки</a><a class="nav on" data-go="clients">Клиенты и баланс</a><a class="nav" data-go="drivers">Деньги у водителей <span class="cnt">2</span></a><a class="nav">Оплаты</a><a class="nav">Товары и цены</a><a class="nav">Отчёты</a></nav>
+  <main class="main">
+    <div class="head"><h1>Клиенты и баланс</h1><div class="btns"><button class="btn">Принять оплату</button><button class="btn pri">+ Новый клиент</button></div></div>
+    <div class="tiles">
+      <div class="card tile"><div class="l">Клиенты должны вам</div><div class="v debt">195 820 ₽</div><div class="h">3 клиента в долгу</div></div>
+      <div class="card tile"><div class="l">Авансы клиентов</div><div class="v adv">471 280 ₽</div><div class="h">товар, который ещё заберут</div></div>
+      <div class="card tile"><div class="l">Ожидается от водителей</div><div class="v" style="color:#6B5200">80 820 ₽</div><div class="h">2 передачи не получены</div></div>
+    </div>
+    <div class="card">
+      <div style="display:flex;justify-content:space-between;gap:12px;flex-wrap:wrap;margin-bottom:10px">
+        <div class="btns" id="filters"><button class="btn sm" data-f="all" style="background:#E8EFFA;border-color:#1E56B3;color:#1E56B3;font-weight:600">Все</button><button class="btn sm" data-f="debtor">Должники</button><button class="btn sm" data-f="advance">С авансом</button><button class="btn sm" data-f="driver">Ждём от водителя</button></div>
+        <input class="inp" style="max-width:300px" placeholder="Поиск клиента">
+      </div>
+      <div class="scroll"><table class="t" style="min-width:820px"><thead><tr><th>Клиент</th><th class="num">Баланс</th><th>Последняя отгрузка</th><th>Последняя оплата</th><th></th></tr></thead><tbody id="crows">
+        <tr class="advance"><td><b>ТД «Комфорт»</b><div class="sub">работает по авансу</div></td><td class="num"><span class="tag a">аванс 321 280 ₽</span></td><td>22.10.2026 · 95 500 ₽</td><td>01.10.2026 · 1 000 000 ₽</td><td></td></tr>
+        <tr class="advance"><td><b>Магазин «Диван-Сити»</b><div class="sub">работает по авансу</div></td><td class="num"><span class="tag a">аванс 150 000 ₽</span></td><td>19.10.2026 · 88 000 ₽</td><td>10.10.2026 · 500 000 ₽</td><td></td></tr>
+        <tr class="debtor"><td><a href="#" data-go="card"><b>Салон «Уют»</b></a><div class="sub">берёт и переводит по ходу</div></td><td class="num"><span class="tag d">долг 45 000 ₽</span></td><td>21.10.2026 · 56 000 ₽</td><td>17.10.2026 · 20 000 ₽</td><td></td></tr>
+        <tr class="debtor driver"><td><b>ООО «Мебель-Град»</b><div class="sub">берёт и переводит по ходу</div></td><td class="num"><span class="tag d">долг 100 000 ₽</span></td><td>20.10.2026 · 30 000 ₽</td><td>03.10.2026 · 120 000 ₽</td><td><span class="tag w">30 000 у водителя</span></td></tr>
+        <tr class="debtor driver"><td><b>ИП Кузнецов Д.</b><div class="sub">платит через водителя</div></td><td class="num"><span class="tag d">долг 50 820 ₽</span></td><td>22.10.2026 · 50 820 ₽</td><td>15.10.2026 · 64 000 ₽</td><td><span class="tag w">50 820 у водителя</span></td></tr>
+        <tr><td><b>Мебельный двор</b><div class="sub">платит сразу</div></td><td class="num"><span class="tag z">0 ₽</span></td><td>18.10.2026 · 42 300 ₽</td><td>18.10.2026 · 42 300 ₽</td><td></td></tr>
+      </tbody></table></div>
+    </div>
+  </main>
+</div></section>
+
+<!-- ============ КАРТОЧКА КЛИЕНТА ============ -->
+<section class="view" id="card"><div class="app">
+  <nav class="side"><div class="logo"><div>LIVARO</div><div>Учёт производства</div></div>
+    <a class="nav" data-go="inv">Отгрузки</a><a class="nav on" data-go="clients">Клиенты и баланс</a><a class="nav" data-go="drivers">Деньги у водителей <span class="cnt">2</span></a><a class="nav">Оплаты</a><a class="nav">Товары и цены</a><a class="nav">Отчёты</a></nav>
+  <main class="main">
+    <div class="head"><div><div class="crumb">Клиенты и баланс / Карточка</div><h1>Салон «Уют»</h1><div style="font-size:14px;color:#3A414A;margin-top:4px">ИП Соколов А. В. · +7 900 123-45-67</div></div>
+      <div class="btns"><button class="btn">Акт сверки</button><button class="btn" data-go="inv">Новая отгрузка</button><button class="btn pri">Принять оплату</button></div></div>
+    <div class="tiles">
+      <div class="card tile"><div class="l">Баланс сейчас</div><div class="v debt">долг 45 000 ₽</div></div>
+      <div class="card tile"><div class="l">Отгружено за октябрь</div><div class="v">195 000 ₽</div></div>
+      <div class="card tile"><div class="l">Оплачено за октябрь</div><div class="v">150 000 ₽</div></div>
+    </div>
+    <div class="card"><h2>История расчётов</h2><div class="scroll"><table class="t" style="min-width:720px"><thead><tr><th>Дата</th><th>Операция</th><th class="num">Отгрузка, ₽</th><th class="num">Оплата, ₽</th><th class="num">Баланс после</th></tr></thead><tbody>
+      <tr><td>21.10.2026</td><td>Отгрузка, накладная № 0139</td><td class="num">56 000</td><td></td><td class="num"><span class="tag d">долг 45 000</span></td></tr>
+      <tr><td>17.10.2026</td><td>Оплата наличными в кассу</td><td></td><td class="num adv">20 000</td><td class="num"><span class="tag a">аванс 11 000</span></td></tr>
+      <tr><td>14.10.2026</td><td>Отгрузка, накладная № 0131</td><td class="num">64 000</td><td></td><td class="num"><span class="tag d">долг 9 000</span></td></tr>
+      <tr><td>07.10.2026</td><td>Оплата переводом</td><td></td><td class="num adv">50 000</td><td class="num"><span class="tag a">аванс 55 000</span></td></tr>
+      <tr><td>06.10.2026</td><td>Отгрузка, накладная № 0123</td><td class="num">25 000</td><td></td><td class="num"><span class="tag a">аванс 5 000</span></td></tr>
+      <tr><td>04.10.2026</td><td>Оплата переводом</td><td></td><td class="num adv">80 000</td><td class="num"><span class="tag a">аванс 30 000</span></td></tr>
+      <tr><td>03.10.2026</td><td>Отгрузка, накладная № 0118</td><td class="num">50 000</td><td></td><td class="num"><span class="tag d">долг 50 000</span></td></tr>
+      <tr><td>01.10.2026</td><td class="muted">Баланс на начало месяца</td><td></td><td></td><td class="num"><span class="tag z">0</span></td></tr>
+    </tbody></table></div></div>
+  </main>
+</div></section>
+
+<!-- ============ ДЕНЬГИ У ВОДИТЕЛЕЙ ============ -->
+<section class="view" id="drivers"><div class="app">
+  <nav class="side"><div class="logo"><div>LIVARO</div><div>Учёт производства</div></div>
+    <a class="nav" data-go="inv">Отгрузки</a><a class="nav" data-go="clients">Клиенты и баланс</a><a class="nav on" data-go="drivers">Деньги у водителей <span class="cnt">2</span></a><a class="nav">Оплаты</a><a class="nav">Товары и цены</a><a class="nav">Отчёты</a></nav>
+  <main class="main">
+    <div class="head"><div><h1>Деньги у водителей</h1><div class="hint" style="font-size:14px;margin-top:6px">Клиент отдал деньги водителю, а до вас они ещё не дошли. Нажмите «Получено», когда водитель передаст деньги, и они зачтутся клиенту.</div></div></div>
+    <div class="card"><div class="scroll"><table class="t" style="min-width:860px"><thead><tr><th>Дата</th><th>Клиент</th><th>Накладная</th><th>Водитель</th><th class="num">Сумма</th><th>Статус</th></tr></thead><tbody>
+      <tr><td>22.10.2026</td><td><b>ИП Кузнецов Д.</b></td><td>№ 0141</td><td>Сергей · Х456ОР<div class="sub">+7 900 321-00-11</div></td><td class="num"><b>50 820 ₽</b></td><td><button class="btn sm pri" data-recv>Получено</button></td></tr>
+      <tr><td>20.10.2026</td><td><b>ООО «Мебель-Град»</b></td><td>№ 0137</td><td>Руслан · В777ОР<div class="sub">+7 900 987-65-43</div></td><td class="num"><b>30 000 ₽</b></td><td><button class="btn sm pri" data-recv>Получено</button></td></tr>
+      <tr><td>15.10.2026</td><td>ИП Кузнецов Д.</td><td>№ 0129</td><td>Сергей · Х456ОР</td><td class="num">64 000 ₽</td><td><span class="tag a">получено 16.10</span></td></tr>
+    </tbody></table></div></div>
+  </main>
+</div></section>
+
+<!-- ============ СОБРАТЬ ШКАФ ============ -->
+<section class="view" id="build"><div class="app">
+  <nav class="side"><div class="logo"><div>LIVARO</div><div>Учёт производства</div></div>
+    <a class="nav on" data-go="inv">Отгрузки</a><a class="nav" data-go="clients">Клиенты и баланс</a><a class="nav" data-go="drivers">Деньги у водителей <span class="cnt">2</span></a><a class="nav">Товары и цены</a><a class="nav">Отчёты</a></nav>
+  <main class="main">
+    <div class="head"><div><div class="crumb">Накладная № 0142 / Добавить шкаф</div><h1>Собрать шкаф</h1></div>
+      <div class="btns"><button class="btn" data-go="inv">Отмена</button><button class="btn pri" data-go="inv">Добавить в накладную</button></div></div>
+    <div class="row">
+      <div class="grow"><div class="card">
+        <div class="step">1. Корпус — за каким шкафом приехали</div>
+        <div class="btns" style="margin-bottom:8px"><button class="ch on">Шкафы МИЛАН</button><button class="ch">Шкафы ПРЕМИУМ</button><button class="ch">Шкаф ЛИОН</button><button class="ch">Техно</button></div>
+        <div class="btns" id="b-c"><button class="ch" data-k="c" data-val="0">Милан 2-х<small>2 двери</small></button><button class="ch on" data-k="c" data-val="1">Милан 4х<small>4 двери</small></button><button class="ch" data-k="c" data-val="2">Милан 6х (1 труба)<small>6 дверей</small></button><button class="ch" data-k="c" data-val="3">Милан 6х (2 трубы)<small>6 дверей</small></button></div>
+        <div class="hint" style="margin-top:6px">Шкаф из двух корпусов (например, 5 дверей = Милан 133 + Милан 2-х) тоже можно собрать — кнопкой «+ ещё корпус».</div>
+
+        <div class="step">2. Цвет</div>
+        <div class="btns"><button class="ch" data-k="color" data-val="СЕРЫЙ">Серый</button><button class="ch" data-k="color" data-val="ЛИНО">Лино</button><button class="ch" data-k="color" data-val="ВАНИЛЬ">Ваниль</button><button class="ch on" data-k="color" data-val="БЕЛЫЙ">Белый</button><button class="ch" data-k="color" data-val="ВОТАН">Вотан</button></div>
+
+        <div class="step">3. Двери МИЛАН — только те, что подходят к этому корпусу <span id="d-stat" style="margin-left:8px"></span></div>
+        <div id="d-list"></div>
+        <div class="hint">Можно смешивать: например, 2 рамки с зеркалом в середине + 4 двери Айша.</div>
+
+        <div class="step">4. Ручки — по одной на каждую дверь</div>
+        <div class="btns" style="margin-bottom:8px"><button class="ch on" data-k="hlen" data-val="30">30 см<small>входят в цену</small></button><button class="ch" data-k="hlen" data-val="60">60 см<small>+700 за шт</small></button><button class="ch" data-k="hlen" data-val="100">100 см (длинные)<small>+1 000 за шт</small></button></div>
+        <div class="btns" style="margin-bottom:8px"><button class="ch on" data-k="htype" data-val="скоба">Скоба</button><button class="ch" data-k="htype" data-val="плоские">Плоские</button><button class="ch" data-k="htype" data-val="корона">Корона</button></div>
+        <div class="btns"><button class="ch on" data-k="hcol" data-val="СЕРЕБРО">Серебро</button><button class="ch" data-k="hcol" data-val="ЗОЛОТО">Золото</button><button class="ch" data-k="hcol" data-val="ЧЕРНЫЕ">Чёрные</button></div>
+
+        <div class="step">5. Карниз — добавляется сам</div>
+        <div class="preview" id="k-line" style="font-weight:500"></div>
+
+        <div class="step">6. Допы</div>
+        <div class="btns" style="margin-bottom:8px"><button class="ch on" data-k="ant" data-val="0">Без антресоли</button><button class="ch" data-k="ant" data-val="1" id="ant-btn">С антресолью</button></div>
+        <div class="btns" style="margin-bottom:8px"><button class="ch on" data-k="box" data-val="0">Без ящиков</button><button class="ch" data-k="box" data-val="1">Ящики, 1 комплект<small>+2 000</small></button><button class="ch" data-k="box" data-val="2">Ящики, 2 комплекта<small>+4 000</small></button></div>
+        <button class="btn" style="border-style:dashed;color:#1E56B3;font-weight:600">+ Своя строка (любой доп с ценой)</button>
+      </div></div>
+
+      <div class="aside">
+        <div class="card"><h2>Цена</h2>
+          <div id="p-lines"></div>
+          <div class="line tot"><span>Итого</span><span id="p-tot"></span></div>
+          <label class="fld" style="margin-top:12px">Цена клиенту (можно изменить)<input class="inp" id="p-client" style="text-align:right;font-weight:600"></label>
+          <div class="hint" style="margin-top:8px">Цены для примера взяты из вашей 1С. Двери и ручки до 30 см входят в цену корпуса.</div>
+        </div>
+        <div class="card"><h2>Название шкафа</h2>
+          <input class="inp" id="o-name" style="font-weight:600">
+          <div class="hint" style="margin-top:8px">Название подставляется по дверям (рамки с зеркалом не считаются). Можно исправить.</div></div>
+        <div class="card"><h2>Состав (в накладную и грузчику)</h2><ol class="comp" id="o-comp"></ol></div>
+      </div>
+    </div>
+  </main>
+</div></section>
+
+<!-- ============ ПЕЧАТЬ КЛИЕНТУ ============ -->
+<section class="view" id="pc"><div class="paperwrap"><div class="paper">
+  <div class="p-head"><div><div class="brand">LIVARO</div></div>
+    <div style="text-align:right"><div style="font-size:12px;color:#3A414A">Накладная</div><div style="font-size:22px;font-weight:700">№ 0142</div><div style="font-size:13px">от 22.10.2026</div></div></div>
+  <div class="kv">
+    <div class="k">Поставщик</div><div><b>LIVARO</b></div>
+    <div class="k">Покупатель</div><div><b>ТД «Комфорт»</b></div>
+    <div class="k">Водитель, машина</div><div>Иван, А123ВС, +7 900 444-55-66</div>
+  </div>
+  <table class="p-t"><thead><tr><th style="width:26px">№</th><th>Наименование</th><th class="num" style="width:56px">Кол-во</th><th class="num" style="width:90px">Цена, ₽</th><th class="num" style="width:96px">Сумма, ₽</th></tr></thead><tbody>
+    <tr class="g"><td>1</td><td>Шкаф Айша 6-дв, белый, по бокам трубы</td><td class="num">1 шт</td><td class="num">34 500,00</td><td class="num">34 500,00</td></tr>
+    <tr class="c"><td></td><td class="nm">Корпус Милан 6х БЕЛЫЙ, по бокам трубы 220×270×52 (коробки № 1 и № 2)</td><td class="num">1</td><td class="num">30 000,00</td><td></td></tr>
+    <tr class="c"><td></td><td class="nm">Дверь АЙША на корпус МИЛАН 220 БЕЛЫЙ С-образ</td><td class="num">6</td><td class="num">входит</td><td></td></tr>
+    <tr class="c"><td></td><td class="nm">Карниз на 6 дв. + фурнитура</td><td class="num">1</td><td class="num">входит</td><td></td></tr>
+    <tr class="c"><td></td><td class="nm">Ручки плоские 60 см ЗОЛОТО</td><td class="num">6</td><td class="num">750,00</td><td></td></tr>
+    <tr class="g"><td>2</td><td>Шкаф Элегант 6-дв, белый</td><td class="num">1 шт</td><td class="num">50 000,00</td><td class="num">50 000,00</td></tr>
+    <tr class="c"><td></td><td class="nm">Корпус Элегант (Премиум 2) БЕЛЫЙ 250×100×50</td><td class="num">1</td><td class="num">50 000,00</td><td></td></tr>
+    <tr class="c"><td></td><td class="nm">Комплект ДВЕРИ + ФАСАД Элегант БЕЛЫЙ</td><td class="num">6</td><td class="num">входит</td><td></td></tr>
+    <tr class="c"><td></td><td class="nm">Карниз на 6 дв. + фурнитура</td><td class="num">1</td><td class="num">входит</td><td></td></tr>
+    <tr class="c"><td></td><td class="nm">Ручки корона 30 см СЕРЕБРО</td><td class="num">6</td><td class="num">входит</td><td></td></tr>
+    <tr class="g"><td>3</td><td>Комод Элегант 98 × 98, белый</td><td class="num">1 шт</td><td class="num">11 000,00</td><td class="num">11 000,00</td></tr>
+    <tr><td colspan="4" class="num"><b>Итого</b></td><td class="num"><b>95 500,00</b></td></tr>
+  </tbody></table>
+  <div style="font-size:13px">Всего позиций 3, на сумму <b>95 500,00 руб.</b> (девяносто пять тысяч пятьсот рублей 00 копеек)</div>
+  <div class="bal">
+    <div style="font-weight:700;margin-bottom:6px">Состояние расчётов с LIVARO</div>
+    <div class="line"><span>Баланс до отгрузки</span><span>аванс 416 780,00</span></div>
+    <div class="line"><span>Сумма этой накладной</span><span>−95 500,00</span></div>
+    <div class="line"><span>Оплачено при отгрузке</span><span>0,00</span></div>
+    <div class="line" style="font-size:16px;font-weight:700;border-top:1px solid #111316;padding-top:8px;margin-top:8px"><span>Баланс после отгрузки</span><span>АВАНС 321 280,00 руб.</span></div>
+    <div style="font-size:11px;color:#3A414A;margin-top:4px">Аванс — ваши средства у LIVARO в счёт будущих отгрузок. Долг — сумма к оплате LIVARO.</div>
+  </div>
+  <div class="sign" style="grid-template-columns:1fr 1fr"><div class="s"><b>Отпустил (LIVARO)</b><div>подпись / расшифровка</div></div><div class="s"><b>Получил (водитель покупателя), претензий к количеству и качеству нет</b><div>подпись / расшифровка</div></div></div>
+</div></div></section>
+
+<!-- ============ ПЕЧАТЬ ГРУЗЧИКУ ============ -->
+<section class="view" id="pl"><div class="paperwrap"><div class="paper">
+  <div class="p-head"><div><div class="brand" style="font-size:22px">LIVARO</div><h1 style="font-size:22px;margin-top:8px">Лист погрузки к накладной № 0142</h1><div style="font-size:13px;margin-top:4px">22.10.2026</div></div>
+    <div style="font-size:12px;font-weight:700;letter-spacing:.06em;border:2px solid #111316;padding:6px 10px">ДЛЯ ГРУЗЧИКА</div></div>
+  <div style="border:2px solid #111316;padding:16px 18px;display:grid;grid-template-columns:1fr 1fr;gap:10px 20px;font-size:15px">
+    <div><div style="font-size:12px;color:#3A414A;font-weight:600">КЛИЕНТ</div><b style="font-size:19px">ТД «Комфорт»</b></div>
+    <div><div style="font-size:12px;color:#3A414A;font-weight:600">МАШИНА</div><b style="font-size:19px">А123ВС</b></div>
+    <div>Водитель: <b>Иван</b>, +7 900 444-55-66</div>
+    <div>Шкафов: <b>2</b>, прочее: <b>1</b></div>
+  </div>
+  <table class="p-t"><thead><tr><th style="width:26px">№</th><th>Что грузить</th><th class="num" style="width:70px">Кол-во</th><th style="width:80px;text-align:center">Погружено</th></tr></thead><tbody>
+    <tr class="g"><td>1</td><td colspan="3">Шкаф Айша 6-дв, белый, по бокам трубы</td></tr>
+    <tr><td></td><td>Корпус Милан 6х БЕЛЫЙ, трубы — коробка № 1</td><td class="num">1</td><td style="text-align:center"><span class="box"></span></td></tr>
+    <tr><td></td><td>Корпус Милан 6х БЕЛЫЙ, трубы — коробка № 2</td><td class="num">1</td><td style="text-align:center"><span class="box"></span></td></tr>
+    <tr><td></td><td>Дверь АЙША на корпус МИЛАН 220 БЕЛЫЙ С-образ</td><td class="num">6</td><td style="text-align:center"><span class="box"></span></td></tr>
+    <tr><td></td><td>Карниз на 6 дв. + фурнитура</td><td class="num">1</td><td style="text-align:center"><span class="box"></span></td></tr>
+    <tr><td></td><td>Ручки плоские 60 см ЗОЛОТО</td><td class="num">6</td><td style="text-align:center"><span class="box"></span></td></tr>
+    <tr class="g"><td>2</td><td colspan="3">Шкаф Элегант 6-дв, белый</td></tr>
+    <tr><td></td><td>Корпус Элегант (Премиум 2) БЕЛЫЙ 250×100×50</td><td class="num">1</td><td style="text-align:center"><span class="box"></span></td></tr>
+    <tr><td></td><td>Комплект ДВЕРИ + ФАСАД Элегант БЕЛЫЙ</td><td class="num">6</td><td style="text-align:center"><span class="box"></span></td></tr>
+    <tr><td></td><td>Карниз на 6 дв. + фурнитура</td><td class="num">1</td><td style="text-align:center"><span class="box"></span></td></tr>
+    <tr><td></td><td>Ручки корона 30 см СЕРЕБРО</td><td class="num">6</td><td style="text-align:center"><span class="box"></span></td></tr>
+    <tr class="g"><td>3</td><td colspan="3">Прочее</td></tr>
+    <tr><td></td><td>Комод Элегант 98 × 98 БЕЛЫЙ</td><td class="num">1</td><td style="text-align:center"><span class="box"></span></td></tr>
+  </tbody></table>
+  <div class="sign" style="grid-template-columns:1fr 1fr 1fr"><div class="s"><b>Выдал со склада</b><div>подпись / расшифровка</div></div><div class="s"><b>Погрузил (грузчик)</b><div>подпись / расшифровка</div></div><div class="s"><b>Принял (водитель)</b><div>подпись / расшифровка</div></div></div>
+</div></div></section>
+
+<script>
+function show(id){
+  var v=document.querySelectorAll('.view'),t=document.querySelectorAll('.tab'),i;
+  for(i=0;i<v.length;i++)v[i].className=v[i].id===id?'view on':'view';
+  for(i=0;i<t.length;i++)t[i].className=t[i].getAttribute('data-v')===id?'tab on':'tab';
+  window.scrollTo(0,0);
+}
+document.addEventListener('click',function(e){
+  var el=e.target;
+  while(el&&el!==document){
+    if(!el.getAttribute){el=el.parentNode;continue;}
+    if(el.getAttribute('data-v')){show(el.getAttribute('data-v'));return;}
+    if(el.getAttribute('data-go')){e.preventDefault();show(el.getAttribute('data-go'));return;}
+    if(el.hasAttribute('data-recv')){var s=document.createElement('span');s.className='tag a';s.innerHTML='получено сегодня';el.parentNode.replaceChild(s,el);return;}
+    if(el.className&&String(el.className).indexOf('opt')===0){var o=document.querySelectorAll('.opt'),k;for(k=0;k<o.length;k++)o[k].className='opt';el.className='opt on';return;}
+    if(el.getAttribute('data-f')){
+      var f=el.getAttribute('data-f'),rows=document.getElementById('crows').getElementsByTagName('tr'),b=document.getElementById('filters').getElementsByTagName('button'),i;
+      for(i=0;i<rows.length;i++){var c=' '+rows[i].className+' ';rows[i].style.display=(f==='all'||c.indexOf(' '+f+' ')>=0)?'':'none';}
+      for(i=0;i<b.length;i++)b[i].style.cssText=b[i]===el?'background:#E8EFFA;border-color:#1E56B3;color:#1E56B3;font-weight:600':'';
+      return;
+    }
+    el=el.parentNode;
+  }
+});
+/* ---- Собрать шкаф ---- */
+var CORP=[
+  {d:2,p:11000,full:'Корпус Милан 2-х дверный'},
+  {d:4,p:24000,full:'Корпус 4-х Милан 220×180×52 (коробки № 1 и № 2)'},
+  {d:6,p:32000,full:'Корпус Милан 6х, 1 труба, 220×270×52 (коробки № 1 и № 2)'},
+  {d:6,p:30000,full:'Корпус Милан 6х, 2 трубы, 220×270×52 (коробки № 1 и № 2)'}
+];
+var DOORS=[
+  {k:'volna',n:'Волна',w:'Волна',p:0},
+  {k:'polu',n:'Полурефленные',w:'Полурефленка',p:0},
+  {k:'mar',n:'Марьям',w:'Марьям',p:0},
+  {k:'ref',n:'Рефленка',w:'Рефленка',p:0},
+  {k:'cs',n:'Айша С-образная',w:'Айша',p:0},
+  {k:'cb',n:'Айша С-одинарный багет',w:'Айша',p:0},
+  {k:'g',n:'Айша Г-образная',w:'Айша',p:1000},
+  {k:'ram',n:'Рамка с зеркалом',w:'',p:0}
+];
+var ANT={2:3000,4:8000,6:12000};
+var S={c:'1',color:'БЕЛЫЙ',cnt:{cs:4},hlen:'30',htype:'скоба',hcol:'СЕРЕБРО',box:'0',ant:'0'};
+function fmt(n){return String(n).replace(/\B(?=(\d{3})+(?!\d))/g,' ')+' ₽';}
+function used(){var s=0,k;for(k in S.cnt)s+=S.cnt[k];return s;}
+function calc(){
+  var c=CORP[+S.c],N=c.d,u=used(),i,h='',lines=[],comp=[],tot=c.p,col=S.color.toLowerCase();
+  for(i=0;i<DOORS.length;i++){var d=DOORS[i],q=S.cnt[d.k]||0;
+    h+='<div style="display:flex;align-items:center;justify-content:space-between;gap:10px;padding:6px 0;border-bottom:1px solid #EBEEF1">'+
+      '<span style="font-size:14px'+(q?';font-weight:600':'')+'">'+d.n+(d.p?' <span class="sub" style="display:inline">+'+fmt(d.p)+' за шт</span>':'')+'</span>'+
+      '<span style="display:flex;align-items:center;gap:8px"><button class="btn sm" data-dk="'+d.k+'" data-dd="-1" aria-label="Меньше">−</button>'+
+      '<b style="min-width:20px;text-align:center">'+q+'</b><button class="btn sm" data-dk="'+d.k+'" data-dd="1" aria-label="Больше">+</button></span></div>';}
+  document.getElementById('d-list').innerHTML=h;
+  document.getElementById('d-stat').innerHTML=u===N?'<span class="tag a">выбрано '+u+' из '+N+'</span>':'<span class="tag d">выбрано '+u+' из '+N+'</span>';
+  lines.push(['Корпус',fmt(c.p)]);
+  comp.push(c.full+' '+S.color+' — 1');
+  var best='',bq=0;
+  for(i=0;i<DOORS.length;i++){var dd=DOORS[i],qq=S.cnt[dd.k]||0;if(!qq)continue;
+    comp.push('Дверь '+dd.n+' на корпус МИЛАН '+S.color+' — '+qq);
+    if(dd.p){tot+=dd.p*qq;lines.push(['Двери '+dd.n+', '+qq+' × '+fmt(dd.p),'+'+fmt(dd.p*qq)]);}
+    if(dd.w&&qq>bq){bq=qq;best=dd.w;}}
+  lines.push(['Двери (остальные)','входят']);
+  var per=S.hlen==='30'?0:(S.hlen==='60'?700:1000);
+  comp.push('Ручки '+S.htype+' '+S.hlen+' см '+S.hcol+' — '+N);
+  lines.push(['Ручки '+S.hlen+' см'+(per?', '+N+' × '+fmt(per):''),per?'+'+fmt(per*N):'входят']);tot+=per*N;
+  var k='Карниз на '+N+' дв. + фурнитура';
+  comp.push(k+' — 1');lines.push(['Карниз','входит']);
+  document.getElementById('k-line').innerHTML=k+' — 1 шт';
+  if(S.ant==='1'){var ap=ANT[N]||0;tot+=ap+N*500;
+    comp.push('Антресоль '+N+'-х на корпус МИЛАН '+S.color+' — 1');comp.push('Двери антресоль '+col+' С-обр — '+N);
+    lines.push(['Антресоль '+N+'-х','+'+fmt(ap)]);lines.push(['Двери антресоли, '+N+' × 500 ₽','+'+fmt(N*500)]);}
+  var b=+S.box;if(b){tot+=b*2000;comp.push('Комплект выдвижных ящиков '+S.color+' (2 ящика) — '+b);lines.push(['Ящики, '+b+' компл.','+'+fmt(b*2000)]);}
+  h='';for(i=0;i<lines.length;i++)h+='<div class="line"><span class="muted">'+lines[i][0]+'</span><span>'+lines[i][1]+'</span></div>';
+  document.getElementById('p-lines').innerHTML=h;
+  document.getElementById('p-tot').innerHTML=fmt(tot);
+  document.getElementById('p-client').value=fmt(tot);
+  document.getElementById('o-name').value='Шкаф '+(best||'с зеркалами')+' '+N+'-дв, '+col+(S.ant==='1'?', с антресолью':'');
+  h='';for(i=0;i<comp.length;i++)h+='<li>'+comp[i]+'</li>';
+  document.getElementById('o-comp').innerHTML=h;
+}
+document.addEventListener('click',function(e){
+  var el=e.target;
+  while(el&&el!==document&&!(el.getAttribute&&(el.getAttribute('data-k')||el.getAttribute('data-dk'))))el=el.parentNode;
+  if(!el||el===document)return;
+  var dk=el.getAttribute('data-dk');
+  if(dk){var N=CORP[+S.c].d,q=S.cnt[dk]||0,dd=+el.getAttribute('data-dd');
+    if(dd>0&&used()>=N)return;if(dd<0&&q===0)return;S.cnt[dk]=q+dd;calc();return;}
+  var k=el.getAttribute('data-k'),sib=el.parentNode.children,i;
+  for(i=0;i<sib.length;i++)sib[i].className=sib[i].className.replace(' on','');
+  el.className+=' on';S[k]=el.getAttribute('data-val');
+  if(k==='c'){S.cnt={cs:CORP[+S.c].d};}
+  calc();
+});
+calc();
+</script>
+</body>
+</html>

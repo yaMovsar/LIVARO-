@@ -1,0 +1,187 @@
+<!doctype html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>План развития LIVARO</title>
+<style>
+:root{--ink:#1d2430;--mute:#5d6878;--line:#dfe3ea;--bg:#f5f6f8;--card:#fff;--acc:#2f5bd3;--acc2:#e9effc;--ok:#1f8a4c;--warn:#b26a00;--warnbg:#fff4e0}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--ink);font:15px/1.55 "Segoe UI",system-ui,sans-serif}
+.page{max-width:900px;margin:0 auto;padding:32px 16px 60px}
+h1{font-size:30px;margin:0 0 4px;letter-spacing:-.01em}
+h2{font-size:20px;margin:36px 0 12px;padding-top:4px}
+h3{font-size:16px;margin:0 0 6px}
+p{margin:0 0 10px}
+.sub{color:var(--mute);margin-bottom:24px}
+.card{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:18px 20px;margin-bottom:12px}
+.grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:12px}
+.lead{font-size:17px}
+.tag{display:inline-block;font-size:12px;font-weight:600;padding:2px 9px;border-radius:99px;background:var(--acc2);color:var(--acc);margin-bottom:6px}
+.tag.ok{background:#e4f5ea;color:var(--ok)}
+.tag.warn{background:var(--warnbg);color:var(--warn)}
+ul{margin:4px 0 0;padding-left:20px}
+li{margin:3px 0}
+table{width:100%;border-collapse:collapse;background:var(--card);border:1px solid var(--line);border-radius:12px;overflow:hidden}
+th,td{text-align:left;padding:9px 12px;border-bottom:1px solid var(--line);vertical-align:top}
+th{background:#f0f2f6;font-size:13px;color:var(--mute);font-weight:600}
+tr:last-child td{border-bottom:0}
+td.c{text-align:center}
+.y{color:var(--ok);font-weight:700}.n{color:#b8bec8}
+.num{white-space:nowrap;text-align:right}
+.total td{font-weight:700;background:#f7f9fd}
+.flow{display:flex;align-items:stretch;gap:8px;flex-wrap:wrap}
+.box{flex:1 1 150px;background:var(--card);border:1px solid var(--line);border-radius:10px;padding:12px;text-align:center}
+.box b{display:block;margin-bottom:2px}
+.box small{color:var(--mute)}
+.arr{align-self:center;color:var(--mute);font-size:20px}
+.step{display:grid;grid-template-columns:110px 1fr;gap:16px;border-left:3px solid var(--acc);padding:4px 0 4px 16px;margin:0 0 18px}
+.step .when{font-weight:700;color:var(--acc)}
+.step .when small{display:block;color:var(--mute);font-weight:400}
+.note{background:var(--warnbg);border:1px solid #f1d9a8;border-radius:10px;padding:12px 16px;margin:12px 0}
+.decide li{margin:6px 0}
+.box.srv{border-color:var(--acc);background:var(--acc2)}
+footer{color:var(--mute);font-size:13px;margin-top:40px}
+.printbtn{float:right;font:inherit;padding:7px 14px;border:1px solid var(--line);border-radius:8px;background:var(--card);cursor:pointer}
+@media (max-width:600px){.step{grid-template-columns:1fr;gap:4px}h1{font-size:24px}}
+@page{size:A4;margin:14mm}
+@media print{body{background:#fff;font-size:12.5px}.page{padding:0;max-width:none}.printbtn{display:none}.card,.step,table,.flow{break-inside:avoid}h2{break-after:avoid;margin-top:22px}}
+</style>
+</head>
+<body>
+<div class="page">
+<button class="printbtn" onclick="print()">Печать</button>
+<h1>LIVARO: перевод учёта в онлайн и план развития</h1>
+<div class="sub">Подготовлено 24 октября 2026 г. Все сроки и цены ориентировочные и уточняются при запуске.</div>
+
+<div class="card lead">
+<p><b>Сейчас.</b> Программа работает и уже закрывает учёт продаж: заказы и накладные, балансы клиентов, оплаты, в том числе товаром, рассрочку, склад, инвентаризацию, этикетки на коробки, отчёты, отправку накладных в WhatsApp.</p>
+<p style="margin:0"><b>Ограничение.</b> Данные лежат на <u>одном</u> компьютере, внутри браузера. Начальник не может посмотреть цифры из дома, склад не видит заказы, а если компьютер сломается, останется только последняя копия.</p>
+</div>
+
+<h2>1. Цель</h2>
+<div class="grid">
+<div class="card"><span class="tag">Доступ</span><h3>Из любого места</h3><p>Офис, дом, телефон. Нужен только браузер и интернет, устанавливать ничего не надо.</p></div>
+<div class="card"><span class="tag">Люди</span><h3>Каждому своё</h3><p>Свой логин и пароль у каждого сотрудника. Каждый видит только свою часть: склад не видит деньги и т.п.</p></div>
+<div class="card"><span class="tag">Надёжность</span><h3>Ничего не теряется</h3><p>Копия базы каждую ночь в отдельное хранилище. Записывается, кто и когда что изменил.</p></div>
+</div>
+
+<h2>2. Как это будет устроено</h2>
+<div class="flow">
+<div class="box"><b>Сотрудники</b><small>компьютер в офисе, телефон начальника, ПК на складе</small></div>
+<div class="arr">→</div>
+<div class="box"><b>Интернет</b><small>защищённое соединение (https), вход по паролю</small></div>
+<div class="arr">→</div>
+<div class="box srv"><b>Сервер LIVARO</b><small>программа и база данных, сервер в России</small></div>
+<div class="arr">→</div>
+<div class="box"><b>Ночные копии</b><small>отдельное хранилище, 30+ дней истории</small></div>
+</div>
+<p style="margin-top:12px">Внешне программа <b>почти не изменится</b>, сотрудники увидят те же экраны. Меняется только место хранения данных: вместо браузера одного компьютера общий сервер. Поэтому переход займёт недели, а не месяцы. Ничего не нужно писать заново.</p>
+<p>Адрес будет такой: <b>uchet.livaro.ru</b> (пример, домен выбираем сами).</p>
+
+<h2>3. Кто что видит (роли)</h2>
+<table>
+<tr><th>Раздел</th><th>Руководитель</th><th>Бухгалтер</th><th>Менеджер продаж</th><th>Склад</th></tr>
+<tr><td>Главная, отчёты, должники</td><td class="c y">✓</td><td class="c y">✓</td><td class="c">только свои продажи</td><td class="c n">—</td></tr>
+<tr><td>Оформить заказ, продажи</td><td class="c y">✓</td><td class="c y">✓</td><td class="c y">✓</td><td class="c">просмотр</td></tr>
+<tr><td>Отгрузка, этикетки, лист погрузки</td><td class="c y">✓</td><td class="c y">✓</td><td class="c y">✓</td><td class="c y">✓</td></tr>
+<tr><td>Оплаты, балансы клиентов</td><td class="c y">✓</td><td class="c y">✓</td><td class="c">просмотр</td><td class="c n">—</td></tr>
+<tr><td>Склад, приход, инвентаризация</td><td class="c y">✓</td><td class="c y">✓</td><td class="c">просмотр</td><td class="c y">✓</td></tr>
+<tr><td>Товары и цены</td><td class="c y">✓</td><td class="c y">✓</td><td class="c n">—</td><td class="c n">—</td></tr>
+<tr><td>Удаление, журнал изменений, пользователи</td><td class="c y">✓</td><td class="c">удаление</td><td class="c n">—</td><td class="c n">—</td></tr>
+</table>
+<p style="margin-top:8px;color:var(--mute)">Таблица для примера: права можно настроить как угодно. Уволенного сотрудника отключают одной кнопкой.</p>
+
+<h2>4. Этапы перехода</h2>
+<div class="step"><div class="when">Этап 0<small>1 неделя</small></div><div>
+<h3>Подготовка</h3>
+<ul><li>Решить вопросы из раздела 7: кто получает доступ, бюджет, домен.</li>
+<li>Арендовать сервер в России и купить домен.</li>
+<li>Положить программу в систему хранения версий: видна каждая правка, и любую можно откатить.</li></ul></div></div>
+
+<div class="step"><div class="when">Этап 1<small>3–4 недели</small></div><div>
+<h3>Онлайн-версия</h3>
+<ul><li>Перенести базу данных на сервер, сделать вход по логину и паролю, настроить роли.</li>
+<li>Журнал изменений: кто, когда и что поменял (например, «изменил цену», «удалил оплату»).</li>
+<li>Если два человека одновременно правят одну накладную, программа предупредит, и правки не затрут друг друга.</li>
+<li>Ночные копии и проверка, что из копии всё восстанавливается.</li>
+<li>Удобный вид на телефоне для главной и отчётов.</li></ul></div></div>
+
+<div class="step"><div class="when">Этап 2<small>1–2 недели</small></div><div>
+<h3>Переход</h3>
+<ul><li>Загрузить текущие данные одной кнопкой из последней копии, ничего не придётся вводить заново.</li>
+<li>Выдать доступы сотрудникам и провести короткий показ, как работать.</li>
+<li>Неделю работать параллельно, сверять с текущей версией, затем полностью перейти.</li></ul></div></div>
+
+<div class="note"><b>Итого до запуска: примерно 1–1,5 месяца.</b> Всё это время текущая программа работает как обычно, учёт не останавливается.</div>
+
+<h2>5. Стоимость в месяц</h2>
+<table>
+<tr><th>Что</th><th>Зачем</th><th class="num">Ориентир</th></tr>
+<tr><td>Сервер (облако в РФ: Timeweb, Selectel, Яндекс Облако)</td><td>Программа и база данных</td><td class="num">1 000 – 2 500 ₽</td></tr>
+<tr><td>Хранилище для копий</td><td>Ночные копии базы</td><td class="num">50 – 200 ₽</td></tr>
+<tr><td>Домен livaro.ru или аналог</td><td>Адрес программы</td><td class="num">≈ 20 – 80 ₽<br><small>(200–900 ₽ в год)</small></td></tr>
+<tr class="total"><td colspan="2">Итого</td><td class="num">≈ 1 100 – 2 800 ₽</td></tr>
+</table>
+<p style="margin-top:8px;color:var(--mute)">Сравнение: лицензия и сопровождение 1С обычно стоят дороже, а здесь программа своя и меняется под нас без доплат. Разработку и поддержку ведёт бухгалтер вместе с ИИ-помощником Claude.</p>
+
+<h2>6. Безопасность и закон</h2>
+<div class="grid">
+<div class="card"><span class="tag warn">Важно</span><h3>Сервер только в России</h3><p>В базе есть имена и телефоны клиентов, а это персональные данные. По закону 152-ФЗ они должны храниться на серверах в РФ. Зарубежные облака не используем.</p></div>
+<div class="card"><span class="tag ok">Защита</span><h3>Доступ</h3><ul><li>Только защищённое соединение (https)</li><li>Личные пароли, при желании код подтверждения</li><li>Блокировка подбора пароля</li><li>Отключение сотрудника за одну минуту</li></ul></div>
+<div class="card"><span class="tag ok">Сохранность</span><h3>Копии</h3><ul><li>Каждую ночь, хранение 30+ дней</li><li>Отдельно от основного сервера</li><li>Раз в месяц проверочное восстановление</li><li>Удалённое можно вернуть, как сейчас</li></ul></div>
+</div>
+<div class="card"><h3>Если пропал интернет</h3><p style="margin:0">На первом этапе без интернета не поработать, поэтому в офисе нужен стабильный интернет, а резервом послужит телефон в режиме модема. Позже можно добавить режим, при котором последние данные видны и без связи.</p></div>
+
+<h2>7. Что нужно решить руководителю</h2>
+<div class="card decide"><ol>
+<li><b>Кому дать доступ</b> и с какими правами: список людей и роли из раздела 3.</li>
+<li><b>Бюджет</b>: около 1–3 тыс. ₽ в месяц на сервер, оплата с карты компании.</li>
+<li><b>Домен</b>: какой адрес взять (например, livaro.ru).</li>
+<li><b>Дата перехода</b> с 1С и текущей версии и кто проверяет данные в неделю параллельной работы.</li>
+<li><b>Что делать с 1С</b>: оставить для налоговой и бухгалтерской отчётности или вести её у бухгалтера на аутсорсе.</li>
+</ol></div>
+
+<h2>8. Развитие после запуска</h2>
+<p>Порядок примерный, его можно менять под задачи бизнеса. Каждый пункт делается отдельно, по 1–3 недели.</p>
+
+<div class="step"><div class="when">Шаг 1<small>1–2 месяц</small></div><div>
+<h3>Деньги и клиенты</h3>
+<ul><li><b>Акт сверки</b> с клиентом за период: печать и отправка в WhatsApp.</li>
+<li><b>Напоминания должникам</b>: список «кому напомнить сегодня» и готовая картинка с долгом для WhatsApp.</li>
+<li><b>Уведомления руководителю в Telegram</b>: продажи за день, крупные оплаты, просрочки по рассрочке.</li>
+<li>Массовое изменение цен (например, «+5% на все шкафы Милан»).</li></ul></div></div>
+
+<div class="step"><div class="when">Шаг 2<small>2–3 месяц</small></div><div>
+<h3>Касса и прибыль</h3>
+<ul><li><b>Расходы</b>: материалы, зарплата, аренда, доставка. Видно, куда уходят деньги.</li>
+<li><b>Отчёт о прибыли</b> за месяц: выручка, расходы, итог.</li>
+<li>Касса: остаток наличных и на счёте.</li>
+<li>Себестоимость моделей: сколько зарабатываем на каждом шкафу.</li></ul></div></div>
+
+<div class="step"><div class="when">Шаг 3<small>3–4 месяц</small></div><div>
+<h3>Производство</h3>
+<ul><li><b>План для цеха</b>: из оформленных заказов программа сама собирает список, что нужно изготовить (корпуса, двери по цветам).</li>
+<li>Статусы готовности: в работе, готово, упаковано. Склад видит, что можно грузить.</li>
+<li>Закупки: учёт материалов, поставщиков, долгов поставщикам.</li></ul></div></div>
+
+<div class="step"><div class="when">Шаг 4<small>далее</small></div><div>
+<h3>Автоматизация и ИИ</h3>
+<ul><li><b>Фото бланка заказа → готовая накладная</b>: ИИ распознаёт рукописный бланк, человек только проверяет. Ориентир 5–10 ₽ за фото.</li>
+<li>Загрузка банковской выписки: переводы клиентов разносятся сами.</li>
+<li><b>Личный кабинет оптовика</b>: клиент сам видит свой баланс, накладные и может оформить заказ.</li>
+<li>QR-код на этикетке коробки: при сканировании открывается заказ.</li></ul></div></div>
+
+<h2>9. Риски и как их закрываем</h2>
+<table>
+<tr><th>Риск</th><th>Что делаем</th></tr>
+<tr><td>Сервер недоступен</td><td>Надёжный хостинг в РФ, ночные копии в другом месте, восстановление за 1–2 часа</td></tr>
+<tr><td>Ошибка или злой умысел сотрудника</td><td>Роли, журнал изменений, удалённое восстанавливается</td></tr>
+<tr><td>Ошибка в программе после изменения</td><td>Каждая правка сначала проверяется автотестами, любую можно откатить</td></tr>
+<tr><td>Программу знает один человек</td><td>Все решения и устройство программы записаны в документации проекта, подключить другого специалиста можно быстро</td></tr>
+</table>
+
+<footer>LIVARO, внутренний документ. Подготовлен бухгалтерией.</footer>
+</div>
+</body>
+</html>

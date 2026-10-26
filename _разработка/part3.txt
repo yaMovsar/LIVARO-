@@ -1,0 +1,248 @@
+<script>
+/* ---------- навигация и мелкие элементы ---------- */
+function show(id){
+  var v=document.querySelectorAll('.view'),t=document.querySelectorAll('.tab'),i;
+  for(i=0;i<v.length;i++)v[i].className=v[i].id===id?'view on':'view';
+  for(i=0;i<t.length;i++)t[i].className=t[i].getAttribute('data-v')===id?'tab on':'tab';
+  window.scrollTo(0,0);
+}
+
+/* ---------- каталог: папки и товары (как в 1С) ---------- */
+var COL4=['СЕРЫЙ','ЛИНО','ВАНИЛЬ','БЕЛЫЙ'];
+function cv(tpl,p){var r=[],i;for(i=0;i<COL4.length;i++)r.push([tpl.replace('{c}',COL4[i]),p]);return r;}
+function F(n,ch,it){return {n:n,ch:ch||[],it:it||[]};}
+var CAT=[
+  F('1. Шкафы распашные',[
+    F('Техно',[],cv('Шкаф 3 дверный ТЕХНО {c}',19000).concat(cv('Шкаф 2 дверный ТЕХНО {c}',14000))),
+    F('Шкаф Лион',[],cv('Шкаф ЛИОН 270 (в220-ш270-г50) {c}',0)),
+    F('Шкафы заказные',[],[['Шкаф заказной №',0]]),
+    F('Шкафы МИЛАН',[
+      F('Милан 133 (3х дверный)',[],cv('Корпус Милан 133 (3х дверный) (в220-ш135-г52) {c}',0)),
+      F('Шкаф Милан - 4х',[],cv('Корпус 4-х Милан {c} 220х180х52 (Коробка № 1 и № 2)',24000)),
+      F('Шкаф Милан - 6х (1 труба)',[],cv('Корпус Милан 6х {c} по бокам полки 220х270х52 (Коробка № 1 и № 2)',32000)),
+      F('Шкаф Милан - 6х (2 трубы)',[],cv('Корпус Милан 6х {c} по бокам трубы 220х270х52 (Коробка № 1 и № 2)',30000)),
+      F('Шкаф Милан 2-х',[],cv('Шкаф Милан 2-х дверный (Труба) {c}',11000))
+    ]),
+    F('Шкафы ПРЕМИУМ',[],cv('шкаф 2-х Элегант (Премиум 2) {c} 250х100х50',18000).concat(cv('шкаф 6-ти премиум {c} С БАГЕТОМ 250 х 300 х 50',47000)))
+  ]),
+  F('2. Двери',[
+    F('Двери ЛИОН',[],[['Дверь ЛИОН с 2х багетом ВАНИЛЬ',0],['Дверь ЛИОН с 2х багетом БЕЛАЯ',0],['Дверь ЛИОН без багета ВАНИЛЬ',0],['Дверь ЛИОН без багета БЕЛАЯ',0]]),
+    F('Двери МИЛАН',[
+      F('Волна',[],cv('Дверь ВОЛНА на корпус МИЛАН {c}',0)),
+      F('Двери полурефленные',[],cv('Дверь Милан полурефленная {c}',0)),
+      F('Марьям',[],cv('Дверь Марьям на корпус МИЛАН {c}',0)),
+      F('Рефленка',[],[]),
+      F('С - Образная',[],cv('дверь АЙША на корпус МИЛАН 220 {c} С - образ',0)),
+      F('С - одинарный багет',[],cv('Дверь Айша с 1 - багетом на МИЛАН - {c}',0)),
+      F('Г - образная',[],cv('Дверь Айша на корпус МИЛАН 220 Г - образная {c}',1000)),
+      F('Рамка на корпус МИЛАН',[],cv('Рамка с зеркалом на корпус МИЛАН {c}',0))
+    ]),
+    F('Двери ПРЕМИУМ',[],cv('Дверь + Фасад на ПРЕМИУМ {c}',0)),
+    F('Двери Элегант',[],cv('Комплект ДВЕРИ + ФАСАД Элегант {c}',0)),
+    F('Двери Айша 250',[],cv('дверь Аиша 250 на корпус ПРЕМИУМ {c}',0))
+  ]),
+  F('4. Антресоль и пеналы',[],cv('Антресоль 2-х на корпус МИЛАН {c}',3000).concat(cv('Антресоль 4-х на корпус МИЛАН {c}',8000),cv('Антресоль 6-х на корпус МИЛАН {c}',12000),cv('Двери Антресоль - {c} С - обр',500))),
+  F('5. Ручки',[
+    F('30 см',[],[['Ручки скобы 30 см СЕРЕБРО',0],['Ручки скобы 30 см ЗОЛОТО',0],['Ручки плоские 30 см ЧЕРНЫЕ',0],['Ручки плоские 30 см СЕРЕБРО',0],['Ручки плоские 30 см ЗОЛОТО',0],['Ручки корона 30 см СЕРЕБРО',0],['Ручки корона 30 см ЗОЛОТО',0]]),
+    F('60 см',[],[['Ручки плоские 60 см ЧЕРНЫЕ',700],['Ручки плоские 60 см СЕРЕБРО',700],['Ручки плоские 60 см ЗОЛОТО',700],['Ручки Корона 60 см ЗОЛОТО',700]]),
+    F('100 см',[],[['Ручки ПЛОСКИЕ длинные СЕРЕБРО',1000],['Ручки ПЛОСКИЕ длинные ЗОЛОТО',1000],['Ручки КОРОНА длинные СЕРЕБРО',1000],['Ручки КОРОНА длинные ЗОЛОТО',1000],['Ручка скоба длинная СЕРЕБРО',1000],['Ручка Скоба длинная ЗОЛОТО',1000]])
+  ]),
+  F('9. Карниз + Фурнитура',[],[['Карниз на 2 дв. + фурнитура',0],['Карниз на 3 дв. + фурнитура',0],['Карниз на 4 дв. + фурнитура',0],['Карниз на 5 дв. + фурнитура',0],['Карниз на 6 дв. + фурнитура',0],['Карниз на 7 дв. + фурнитура',0],['Карниз на 8 дв. + фурнитура',0],['Карниз на 10 дв. + фурнитура',0]]),
+  F('10. Ящики выдвижные',[],cv('Комплект выдвижных ящиков под полки {c} (2 ящика)',2000).concat(cv('Комплект выдвижных ящиков под трубу {c} (2 ящика)',2000))),
+  F('6. Прихожие',[],cv('Прихожая СОФИЯ 150 (220 х 150 х 52) {c}',0)),
+  F('7. Кровати',[],[['Кровать с обивкой 90',10000],['Кровать с обивкой 120',11500],['Кровать с обивкой 140',13500],['Кровать с обивкой 160',15000],['Кровать с обивкой 180',15000]]),
+  F('8. Комоды и тумбы',[],cv('Комод Элегант 98 х 98 {c}',11000).concat(cv('Тумба прикроватная Элегант {c}',5500)))
+];
+var NODES={},OPEN={'0':1,'0-2':1},SEL={s:'0-2',c:'0'};
+function index(list,pre){for(var i=0;i<list.length;i++){var n=list[i];n.id=pre+i;NODES[n.id]=n;index(n.ch,n.id+'-');}}
+function reindex(){NODES={};index(CAT,'');}
+reindex();
+
+/* ---------- продажа: группы (шкафы) ---------- */
+function today(){var d=new Date();function z(x){return (x<10?'0':'')+x;}return z(d.getDate())+'.'+z(d.getMonth()+1)+'.'+d.getFullYear();}
+var DOC=[{t:'Шкаф 1',items:[]}],CUR=0;
+var HDR={client:'',no:'1',date:today(),bt:'0',bal:'',pay:''};
+var KEY='livaro_trial_v1';
+function save(){try{localStorage.setItem(KEY,JSON.stringify({doc:DOC,cat:CAT,hdr:HDR,cur:CUR}));}catch(e){}}
+(function(){try{var s=JSON.parse(localStorage.getItem(KEY)||'null');if(s){DOC=s.doc;CAT=s.cat;HDR=s.hdr;CUR=s.cur||0;reindex();}}catch(e){}})();
+function before(){var b=num(HDR.bal);return HDR.bt==='adv'?b:(HDR.bt==='debt'?-b:0);}
+function balTxt(v){return v>0?'аванс '+rub(v):(v<0?'долг '+rub(-v):'0 ₽');}
+function balP(v){return (v>0?'АВАНС ':(v<0?'ДОЛГ ':''))+fmt(Math.abs(v))+',00 руб.';}
+function price(p){return p===null||p===undefined?'<span style="color:#A84B00">нет цены</span>':(p?rub(p):'входит');}
+
+function esc(s){return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/"/g,'&quot;');}
+function fmt(n){if(n===null||n===undefined)return '';return String(n).replace(/\B(?=(\d{3})+(?!\d))/g,' ');}
+function rub(n){return fmt(n)+' ₽';}
+function gsum(g){var s=0;for(var i=0;i<g.items.length;i++)s+=g.items[i].q*g.items[i].p;return s;}
+function dsum(){var s=0;for(var i=0;i<DOC.length;i++)s+=gsum(DOC[i]);return s;}
+var FOLDER='<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true" style="flex:none"><path d="M3 7a2 2 0 0 1 2-2h4l2 2h8a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/></svg>';
+
+function treeHtml(list,depth,view){
+  var h='';
+  for(var i=0;i<list.length;i++){var n=list[i],has=n.ch.length>0,op=OPEN[n.id];
+    h+='<div class="tn'+(SEL[view]===n.id?' on':'')+'" data-tv="'+view+'" data-tid="'+n.id+'" style="padding-left:'+(6+depth*16)+'px"><span class="tw">'+(has?(op?'▾':'▸'):'')+'</span>'+FOLDER+'<span>'+esc(n.n)+'</span></div>';
+    if(has&&op)h+=treeHtml(n.ch,depth+1,view);}
+  return h;
+}
+function renderList(){
+  var q=document.getElementById('cat-q').value.toLowerCase(),h='',k,i,n,cnt=0;
+  if(q){
+    document.getElementById('list-h').innerHTML='Найдено по «'+esc(q)+'»';
+    for(k in NODES){n=NODES[k];for(i=0;i<n.it.length;i++)if(n.it[i][0].toLowerCase().indexOf(q)>=0&&cnt<60){cnt++;
+      h+='<div class="it" data-add="'+k+'|'+i+'"><span>'+esc(n.it[i][0])+'<div class="sub">'+esc(n.n)+'</div></span><span class="pr2">'+price(n.it[i][1])+'</span></div>';}}
+    if(!cnt)h='<div class="hint" style="padding:10px">Ничего не найдено</div>';
+  }else{
+    n=NODES[SEL.s];
+    document.getElementById('list-h').innerHTML=n?esc(n.n):'';
+    if(n)for(i=0;i<n.it.length;i++)h+='<div class="it" data-add="'+n.id+'|'+i+'"><span>'+esc(n.it[i][0])+'</span><span class="pr2">'+price(n.it[i][1])+'</span></div>';
+    if(!h)h='<div class="hint" style="padding:10px">'+(n&&n.ch.length?'Откройте папку внутри':'В этой папке пока нет товаров')+'</div>';
+  }
+  document.getElementById('list').innerHTML=h;
+}
+function renderDoc(){
+  var h='',g,i,it,tot=dsum();
+  for(g=0;g<DOC.length;g++){var G=DOC[g];
+    h+='<div class="gbox'+(g===CUR?' cur':'')+'" data-g="'+g+'"><div class="ghead"><input class="inp" data-gt="'+g+'" value="'+esc(G.t)+'" aria-label="Название группы">'+
+      (g===CUR?'<span class="cur-tag">ТЕКУЩАЯ</span>':'')+'<span class="gsum">'+rub(gsum(G))+'</span><button class="x" data-gdel="'+g+'" aria-label="Удалить группу">×</button></div><table class="gt">';
+    if(!G.items.length)h+='<tr><td class="hint">Нажмите товары в каталоге справа</td></tr>';
+    for(i=0;i<G.items.length;i++){it=G.items[i];
+      h+='<tr draggable="true" data-drag="'+g+'|'+i+'" title="Перетащите, чтобы поменять порядок или перенести в другой шкаф"><td><span class="grip" aria-hidden="true">⋮⋮</span>'+esc(it.n)+'</td>'+'<td style="white-space:nowrap"><button class="qb" data-qd="'+g+'|'+i+'|-1" aria-label="Меньше">−</button> <b style="display:inline-block;min-width:22px;text-align:center">'+it.q+'</b> <button class="qb" data-qd="'+g+'|'+i+'|1" aria-label="Больше">+</button></td>'+
+        '<td class="num"><input class="inp pin" data-p="'+g+'|'+i+'" value="'+fmt(it.p)+'" aria-label="Цена"></td><td class="num" style="width:90px">'+(it.p?rub(it.q*it.p):'<span class="muted">входит</span>')+'</td>'+
+        '<td style="width:32px"><button class="x" data-del="'+g+'|'+i+'" aria-label="Убрать">×</button></td></tr>';}
+    h+='</table></div>';}
+  if(!DOC.length)h='<div class="hint">Нажмите «+ Новая группа (шкаф)»</div>';
+  document.getElementById('doc').innerHTML=h;
+  document.getElementById('doc-tot').innerHTML=rub(tot);
+  var b0=before(),pay=num(HDR.pay),after=b0-tot+pay;
+  document.getElementById('b-before').innerHTML=balTxt(b0);
+  document.getElementById('b-sum').innerHTML='−'+rub(tot);
+  document.getElementById('b-pay').innerHTML=pay?'+'+rub(pay):'0 ₽';
+  document.getElementById('b-after').innerHTML=balTxt(after);
+  document.getElementById('b-after-row').className='line tot '+(after>0?'adv':(after<0?'debt':''));
+}
+function renderCat(){
+  var n=NODES[SEL.c],h='',i;
+  document.getElementById('c-title').innerHTML=n?esc(n.n):'Выберите папку';
+  if(n)for(i=0;i<n.it.length;i++)h+='<tr><td><input class="inp" data-cn="'+n.id+'|'+i+'" value="'+esc(n.it[i][0])+'" style="min-height:36px;padding:6px 10px"></td><td class="num"><input class="inp pin" data-cp="'+n.id+'|'+i+'" value="'+fmt(n.it[i][1])+'"></td><td style="width:32px"><button class="x" data-cdel="'+n.id+'|'+i+'" aria-label="Удалить товар">×</button></td></tr>';
+  if(!h)h='<tr><td colspan="3" class="hint">'+(n&&n.ch.length?'В этой папке только подпапки':'Пока нет товаров — нажмите «+ Товар в эту папку»')+'</td></tr>';
+  document.getElementById('c-items').innerHTML=h;
+}
+/* сумма прописью */
+var U=['','один','два','три','четыре','пять','шесть','семь','восемь','девять'],T1=['десять','одиннадцать','двенадцать','тринадцать','четырнадцать','пятнадцать','шестнадцать','семнадцать','восемнадцать','девятнадцать'],
+T=['','','двадцать','тридцать','сорок','пятьдесят','шестьдесят','семьдесят','восемьдесят','девяносто'],H=['','сто','двести','триста','четыреста','пятьсот','шестьсот','семьсот','восемьсот','девятьсот'];
+function tri(n,fem){var h=Math.floor(n/100),t=Math.floor(n%100/10),u=n%10,r=[];if(h)r.push(H[h]);if(t===1)r.push(T1[u]);else{if(t)r.push(T[t]);if(u)r.push(fem&&u<3?['','одна','две'][u]:U[u]);}return r.join(' ');}
+function pl(n,a,b,c){n=n%100;if(n>10&&n<20)return c;n=n%10;return n===1?a:(n>1&&n<5?b:c);}
+function words(n){if(!n)return 'Ноль рублей 00 копеек';var r=[],m=Math.floor(n/1e6),th=Math.floor(n%1e6/1000),u=n%1000;
+  if(m)r.push(tri(m)+' '+pl(m,'миллион','миллиона','миллионов'));if(th)r.push(tri(th,1)+' '+pl(th,'тысяча','тысячи','тысяч'));if(u)r.push(tri(u));
+  var s=r.join(' ');return s.charAt(0).toUpperCase()+s.slice(1)+' '+pl(n,'рубль','рубля','рублей')+' 00 копеек';}
+function renderPrint(){
+  var c='',l='',g,i,it,tot=dsum(),b0=before(),pay=num(HDR.pay),after=b0-tot+pay,els,k;
+  var map={'p-no':HDR.no,'p-date':HDR.date,'p-client':HDR.client||'—'};
+  for(k in map){els=document.querySelectorAll('.'+k);for(i=0;i<els.length;i++)els[i].innerHTML=esc(map[k]);}
+  document.getElementById('pc-before').innerHTML=balP(b0);
+  document.getElementById('pc-pay').innerHTML=fmt(pay)+',00';
+  for(g=0;g<DOC.length;g++){var G=DOC[g],s=gsum(G);
+    c+='<tr class="g"><td>'+(g+1)+'</td><td>'+esc(G.t)+'</td><td class="num">1 шт</td><td class="num">'+fmt(s)+',00</td><td class="num">'+fmt(s)+',00</td></tr>';
+    l+='<tr class="g"><td>'+(g+1)+'</td><td colspan="3">'+esc(G.t)+'</td></tr>';
+    for(i=0;i<G.items.length;i++){it=G.items[i];
+      c+='<tr class="c"><td></td><td class="nm">'+esc(it.n)+'</td><td class="num">'+it.q+'</td><td class="num">'+(it.p?fmt(it.p)+',00':'входит')+'</td><td></td></tr>';
+      l+='<tr class="c"><td></td><td class="nm">'+esc(it.n)+'</td><td class="num">'+it.q+'</td><td style="text-align:center"><span class="box"></span></td></tr>';}}
+  c+='<tr><td colspan="4" class="num"><b>Итого</b></td><td class="num"><b>'+fmt(tot)+',00</b></td></tr>';
+  document.getElementById('pc-body').innerHTML=c;
+  document.getElementById('pl-body').innerHTML=l;
+  document.getElementById('pl-cnt').innerHTML=DOC.length;
+  document.getElementById('pc-words').innerHTML='Всего позиций '+DOC.length+', на сумму <b>'+fmt(tot)+',00 руб.</b><br>'+words(tot);
+  document.getElementById('pc-sum').innerHTML='−'+fmt(tot)+',00';
+  document.getElementById('pc-after').innerHTML=balP(after);
+}
+function render(){
+  document.getElementById('tree').innerHTML=treeHtml(CAT,0,'s');
+  document.getElementById('ctree').innerHTML=treeHtml(CAT,0,'c');
+  renderList();renderDoc();renderCat();renderPrint();save();
+}
+function fillHdr(){var f={client:'h-client',no:'h-no',date:'h-date',bt:'h-bt',bal:'h-bal',pay:'h-pay'},k;for(k in f)document.getElementById(f[k]).value=HDR[k];}
+function readHdr(){var f={client:'h-client',no:'h-no',date:'h-date',bt:'h-bt',bal:'h-bal',pay:'h-pay'},k;for(k in f)HDR[k]=document.getElementById(f[k]).value;renderDoc();renderPrint();save();}
+/* перенос строки: to — шкаф, pos — место в нём (null = в конец) */
+function move(g,i,to,pos){
+  if(!DOC[to])return;
+  var T=DOC[to].items,it=DOC[g].items[i],f=-1,k;
+  if(pos===null&&g===to)return;
+  DOC[g].items.splice(i,1);
+  if(g!==to)for(k=0;k<T.length;k++)if(T[k].n===it.n&&T[k].p===it.p)f=k;
+  if(f>=0)T[f].q+=it.q;
+  else{if(pos===null)pos=T.length;if(g===to&&i<pos)pos--;T.splice(pos,0,it);}
+  render();
+}
+var DRAG=null;
+function up(el,test){while(el&&el!==document){if(el.getAttribute&&test(el))return el;el=el.parentNode;}return null;}
+function rowOf(el){return up(el,function(x){return x.getAttribute('data-drag')!==null;});}
+function gboxOf(el){return up(el,function(x){return x.getAttribute('data-g')!==null&&String(x.className).indexOf('gbox')>=0;});}
+function clearOver(){var o=document.querySelectorAll('.over,.dt,.db'),k;for(k=0;k<o.length;k++)o[k].className=o[k].className.replace(/ ?(over|dt|db)\b/g,'');}
+function after(e,r){var b=r.getBoundingClientRect();return e.clientY>b.top+b.height/2;}
+document.addEventListener('dragstart',function(e){var t=e.target;if(t.getAttribute&&t.getAttribute('data-drag')){DRAG=t.getAttribute('data-drag');try{e.dataTransfer.setData('text',DRAG);e.dataTransfer.effectAllowed='move';}catch(x){}}});
+document.addEventListener('dragover',function(e){
+  if(!DRAG)return;var b=gboxOf(e.target);if(!b)return;e.preventDefault();clearOver();
+  var r=rowOf(e.target);if(r)r.className+=after(e,r)?' db':' dt';else b.className+=' over';
+});
+document.addEventListener('drop',function(e){
+  if(!DRAG)return;var b=gboxOf(e.target);if(!b)return;e.preventDefault();
+  var a=DRAG.split('|'),r=rowOf(e.target),to=+b.getAttribute('data-g'),pos=null;
+  if(r){var t=r.getAttribute('data-drag').split('|');pos=+t[1]+(after(e,r)?1:0);}
+  DRAG=null;clearOver();move(+a[0],+a[1],to,pos);
+});
+document.addEventListener('dragend',function(){DRAG=null;clearOver();});
+function num(v){return parseInt(String(v).replace(/[^\d]/g,''),10)||0;}
+function pair(s){var a=s.split('|');return [a[0],+a[1],a[2]];}
+
+document.addEventListener('click',function(e){
+  var el=e.target,a,n,v;
+  while(el&&el!==document){
+    if(!el.getAttribute){el=el.parentNode;continue;}
+    if(el.getAttribute('data-v')){show(el.getAttribute('data-v'));return;}
+    if(el.getAttribute('data-go')){e.preventDefault();show(el.getAttribute('data-go'));return;}
+    if(el.tagName==='INPUT'||el.tagName==='SELECT'||el.tagName==='OPTION')return;
+    if((v=el.getAttribute('data-tid'))){var view=el.getAttribute('data-tv');n=NODES[v];
+      if(n.ch.length)OPEN[v]=SEL[view]===v?!OPEN[v]:true;SEL[view]=v;
+      if(view==='s')document.getElementById('cat-q').value='';render();return;}
+    if((v=el.getAttribute('data-add'))){a=pair(v);var it=NODES[a[0]].it[a[1]];
+      if(!DOC.length){DOC.push({t:'Группа 1',items:[]});CUR=0;}
+      var G=DOC[CUR],f=-1;for(var i=0;i<G.items.length;i++)if(G.items[i].n===it[0])f=i;
+      if(f>=0)G.items[f].q++;else G.items.push({n:it[0],q:1,p:it[1]||0});render();return;}
+    if((v=el.getAttribute('data-qd'))){a=v.split('|');var x=DOC[+a[0]].items[+a[1]];x.q=Math.max(1,x.q+(+a[2]));render();return;}
+    if((v=el.getAttribute('data-del'))){a=v.split('|');DOC[+a[0]].items.splice(+a[1],1);render();return;}
+    if((v=el.getAttribute('data-gdel'))){DOC.splice(+v,1);CUR=Math.max(0,Math.min(CUR,DOC.length-1));render();return;}
+    if(el.getAttribute('data-print')){window.print();return;}
+    if(el.getAttribute('data-clear')){if(confirm('Начать новую накладную? Текущая будет очищена.')){DOC=[{t:'Шкаф 1',items:[]}];CUR=0;HDR.no=String(num(HDR.no)+1);HDR.client='';HDR.bal='';HDR.bt='0';HDR.pay='';HDR.date=today();fillHdr();render();}return;}
+    if(el.getAttribute('data-newg')){DOC.push({t:'Шкаф '+(DOC.length+1),items:[]});CUR=DOC.length-1;render();return;}
+    if((v=el.getAttribute('data-g'))){CUR=+v;render();return;}
+    if((v=el.getAttribute('data-act'))){n=NODES[SEL.c];var nm;
+      if(v==='addRoot'){nm=prompt('Название новой папки');if(nm){CAT.push(F(nm));reindex();}}
+      else if(v==='addSub'){if(!n)return;nm=prompt('Название подпапки в «'+n.n+'»');if(nm){n.ch.push(F(nm));reindex();OPEN[n.id]=true;}}
+      else if(v==='rename'){if(!n)return;nm=prompt('Новое название папки',n.n);if(nm)n.n=nm;}
+      else if(v==='del'){if(!n)return;if(confirm('Удалить папку «'+n.n+'» со всем содержимым?')){var p=n.id.lastIndexOf('-'),par=p<0?CAT:NODES[n.id.slice(0,p)].ch;par.splice(+n.id.slice(p+1),1);reindex();SEL.c='0';}}
+      else if(v==='addItem'){if(!n)return;nm=prompt('Название товара');if(nm){var pr=num(prompt('Цена (0 — входит в стоимость)','0'));n.it.push([nm,pr]);}}
+      render();return;}
+    if((v=el.getAttribute('data-cdel'))){a=pair(v);NODES[a[0]].it.splice(a[1],1);render();return;}
+    if(el.hasAttribute&&el.hasAttribute('data-recv')){var s=document.createElement('span');s.className='tag a';s.innerHTML='получено сегодня';el.parentNode.replaceChild(s,el);return;}
+    if(el.className&&String(el.className).indexOf('opt')===0){var o=document.querySelectorAll('.opt'),k;for(k=0;k<o.length;k++)o[k].className='opt';el.className='opt on';return;}
+    if(el.getAttribute('data-f')){
+      var fl=el.getAttribute('data-f'),rows=document.getElementById('crows').getElementsByTagName('tr'),b=document.getElementById('filters').getElementsByTagName('button'),j;
+      for(j=0;j<rows.length;j++){var cl=' '+rows[j].className+' ';rows[j].style.display=(fl==='all'||cl.indexOf(' '+fl+' ')>=0)?'':'none';}
+      for(j=0;j<b.length;j++)b[j].style.cssText=b[j]===el?'background:#E8EFFA;border-color:#1E56B3;color:#1E56B3;font-weight:600':'';
+      return;}
+    el=el.parentNode;
+  }
+});
+document.addEventListener('change',function(e){
+  var el=e.target,v,a;
+  if(el.className&&String(el.className).indexOf('hf')>=0){readHdr();return;}  if((v=el.getAttribute('data-gt'))!==null){DOC[+v].t=el.value;renderPrint();return;}
+  if((v=el.getAttribute('data-p'))){a=v.split('|');DOC[+a[0]].items[+a[1]].p=num(el.value);render();return;}
+  if((v=el.getAttribute('data-cp'))){a=pair(v);NODES[a[0]].it[a[1]][1]=num(el.value);render();return;}
+  if((v=el.getAttribute('data-cn'))){a=pair(v);NODES[a[0]].it[a[1]][0]=el.value;render();return;}
+});
+document.getElementById('cat-q').onkeyup=renderList;
+fillHdr();
+render();
+</script>
+</body>
+</html>

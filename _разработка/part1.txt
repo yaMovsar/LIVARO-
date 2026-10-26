@@ -1,0 +1,85 @@
+<div class="tabs">
+  <b>Макет LIVARO</b>
+  <button class="tab on" data-v="inv">Новая продажа</button>
+  <button class="tab" data-v="cat">Товары (папки)</button>
+  <button class="tab" data-v="clients">Клиенты и баланс</button>
+  <button class="tab" data-v="card">Карточка клиента</button>
+  <button class="tab" data-v="drivers">Деньги у водителей</button>
+  <button class="tab" data-v="pc">Печать: клиенту</button>
+  <button class="tab" data-v="pl">Печать: грузчику</button>
+</div>
+
+<!-- ============ НОВАЯ ПРОДАЖА ============ -->
+<section class="view on" id="inv"><div class="app">
+  <nav class="side"><div class="logo"><div>LIVARO</div><div>Учёт производства</div></div>
+    <a class="nav on" data-go="inv">Продажи</a><a class="nav" data-go="cat">Товары</a><a class="nav" data-go="clients">Клиенты и баланс</a><a class="nav" data-go="drivers">Деньги у водителей <span class="cnt">2</span></a><a class="nav">Оплаты</a><a class="nav">Отчёты</a></nav>
+  <main class="main">
+    <div class="head"><div><div class="crumb">Продажи / Новая</div><h1>Пробная накладная</h1></div>
+      <div class="btns"><button class="btn" data-clear="1">Очистить (новая накладная)</button><button class="btn pri" data-go="pc">Печать: клиенту</button><button class="btn pri" data-go="pl">Печать: грузчику</button></div></div>
+    <div class="row">
+      <div class="grow">
+        <div class="card"><h2>Клиент</h2><div class="form">
+          <label class="fld" style="grid-column:span 3">Клиент<input class="inp hf" id="h-client" placeholder="Например: Абдурахим"></label>
+          <label class="fld">Номер накладной<input class="inp hf" id="h-no"></label>
+          <label class="fld">Дата<input class="inp hf" id="h-date"></label>
+          <label class="fld">Баланс клиента до продажи<select class="inp hf" id="h-bt"><option value="0">Ноль</option><option value="adv">Аванс</option><option value="debt">Долг</option></select></label>
+          <label class="fld">Сумма аванса / долга, ₽<input class="inp hf" id="h-bal" placeholder="0"></label>
+          <label class="fld">Оплатил сейчас, ₽<input class="inp hf" id="h-pay" placeholder="0"></label>
+        </div><div class="hint" style="margin-top:10px">В пробной версии баланс вводится вручную. В настоящей программе он будет считаться сам по всем прошлым продажам и оплатам.</div></div>
+
+        <div class="card">
+          <div style="display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap;margin-bottom:6px"><h2 style="margin:0">Товары</h2><button class="btn" style="border-style:dashed;color:#1E56B3;font-weight:600" data-newg="1">+ Новая группа (шкаф)</button></div>
+          <div class="hint" style="margin-bottom:12px">Выделенная синим группа — текущая: товары, которые вы нажимаете в каталоге справа, добавляются в неё. Нажмите на другую группу, чтобы сделать её текущей. Строки можно перетаскивать мышкой — менять порядок и переносить в другой шкаф.</div>
+          <div id="doc"></div>
+          <div class="line tot" style="font-size:20px"><span>Итого по продаже</span><span id="doc-tot"></span></div>
+        </div>
+
+        <div class="row">
+          <div class="card" style="flex:1 1 300px;min-width:0"><h2>Оплата при отгрузке</h2>
+            <label class="opt on"><input type="radio" name="pay" checked><div><b>Без оплаты</b><div class="sub">Спишется с аванса или добавится к долгу</div></div></label>
+            <label class="opt"><input type="radio" name="pay"><div><b>Оплатил сразу</b><div class="sub">Наличные в кассу или перевод</div></div></label>
+            <label class="opt"><input type="radio" name="pay"><div><b>Деньги передаст водитель клиента</b><div class="sub">Попадёт в «Деньги у водителей»</div></div></label>
+          </div>
+          <div class="card" style="flex:1 1 300px;min-width:0"><h2>Баланс клиента</h2>
+            <div class="line"><span class="muted">До продажи</span><span id="b-before"></span></div>
+            <div class="line"><span class="muted">Эта продажа</span><span id="b-sum"></span></div>
+            <div class="line"><span class="muted">Оплата сейчас</span><span id="b-pay"></span></div>
+            <div class="line tot" id="b-after-row"><span>После</span><span id="b-after"></span></div>
+            <a class="nav" style="padding:10px 0 0;color:#1E56B3" data-go="card">История расчётов клиента →</a>
+          </div>
+        </div>
+      </div>
+
+      <div class="aside" style="flex:1 1 360px">
+        <div class="card"><h2>Каталог товаров</h2>
+          <input class="inp" id="cat-q" placeholder="Поиск по всем папкам…" style="margin-bottom:10px">
+          <div class="scrollbox" id="tree" style="max-height:300px;padding:4px"></div>
+          <div id="list-h" style="font-size:13px;font-weight:700;margin:14px 0 6px"></div>
+          <div class="scrollbox" id="list"></div>
+          <div class="hint" style="margin-top:8px">Нажмите на товар — он добавится в текущую группу. Повторное нажатие увеличит количество.</div>
+        </div>
+      </div>
+    </div>
+  </main>
+</div></section>
+
+<!-- ============ ТОВАРЫ (ПАПКИ) ============ -->
+<section class="view" id="cat"><div class="app">
+  <nav class="side"><div class="logo"><div>LIVARO</div><div>Учёт производства</div></div>
+    <a class="nav" data-go="inv">Продажи</a><a class="nav on" data-go="cat">Товары</a><a class="nav" data-go="clients">Клиенты и баланс</a><a class="nav" data-go="drivers">Деньги у водителей <span class="cnt">2</span></a><a class="nav">Оплаты</a><a class="nav">Отчёты</a></nav>
+  <main class="main">
+    <div class="head"><div><h1>Товары</h1><div class="hint" style="font-size:14px;margin-top:6px">Папки и товары вы создаёте сами — как в 1С. При первом запуске всё перенесём из 1С.</div></div></div>
+    <div class="row">
+      <div class="card" style="flex:1 1 320px;min-width:0">
+        <div class="btns" style="margin-bottom:10px"><button class="btn sm" data-act="addRoot">+ Папка</button><button class="btn sm" data-act="addSub">+ Подпапка</button><button class="btn sm" data-act="rename">Переименовать</button><button class="btn sm" data-act="del">Удалить</button></div>
+        <div class="scrollbox" id="ctree" style="max-height:620px;padding:4px"></div>
+      </div>
+      <div class="card" style="flex:999 1 480px;min-width:0">
+        <div style="display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap;margin-bottom:10px"><h2 style="margin:0" id="c-title"></h2><button class="btn pri sm" data-act="addItem">+ Товар в эту папку</button></div>
+        <div class="scroll"><table class="t" style="min-width:480px"><thead><tr><th>Наименование</th><th class="num">Цена, ₽</th><th></th></tr></thead><tbody id="c-items"></tbody></table></div>
+        <div class="hint" style="margin-top:10px">Цена 0 — товар входит в стоимость (вместо «1 ₽» в 1С), в накладной будет написано «входит». Название и цену можно править прямо в таблице.</div>
+      </div>
+    </div>
+  </main>
+</div></section>
+
