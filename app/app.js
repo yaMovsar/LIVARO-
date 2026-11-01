@@ -8,7 +8,12 @@ const $ = s => document.querySelector(s);
 const esc = s => String(s == null ? '' : s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
 const fmt = n => (n === null || n === undefined || n === '') ? '' : String(Math.round(n)).replace(/\B(?=(\d{3})+(?!\d))/g, ' ');
 const rub = n => fmt(n) + ' ₽';
-const num = v => parseInt(String(v == null ? '' : v).replace(/[^\d]/g, ''), 10) || 0;
+/* целое число из ввода: пробелы и «₽» пропускаем; «12 500,50» → 12 501 (1–2 цифры после запятой/точки — копейки, округляем); «12.500» → 12 500 */
+const num = v => { const t = String(v == null ? '' : v).replace(/[^\d.,]/g, ''), m = t.match(/^(.*?)[.,](\d{1,2})$/);
+  return Math.round(m ? +(m[1].replace(/\D/g, '') || 0) + +('0.' + m[2]) : parseInt(t.replace(/\D/g, ''), 10) || 0); };
+/* минус в денежном поле: не переворачиваем знак молча, а останавливаем ввод */
+const minus = v => /^\s*[-−–]/.test(String(v == null ? '' : v));
+const MINUS_MSG = 'Сумма не может быть с минусом. Введите сумму без знака «−».';
 const uid = () => Date.now().toString(36) + Math.random().toString(36).slice(2, 7);
 const pad = x => (x < 10 ? '0' : '') + x;
 const isoOf = d => d.getFullYear() + '-' + pad(d.getMonth() + 1) + '-' + pad(d.getDate());
@@ -659,7 +664,7 @@ function restoreTrash(tids) {
       DB.orders.push(t.order); DB.payments.push(...t.payments);
       t.allocs.forEach(a => { const p = DB.payments.find(x => x.id === a.pid); if (p && p.alloc) p.alloc.push(...a.alloc); });
     } else if (k === 'client') DB.clients.push(t.data);
-    else if (k === 'payment') DB.payments.push(t.data);
+    else if (k === 'payment') { DB.payments.push(t.data); if (t.moves) DB.stockMoves.push(...t.moves); }
     else if (k === 'template') DB.templates.push(t.data);
     else if (k === 'inst') DB.installments.push(t.data);
     else if (k === 'item') { const f = folderByPath(t.path); if (f) f.it.push(t.data); else DB.cat.push({ n: 'Восстановленные', ch: [], it: [t.data] }); }
@@ -906,6 +911,24 @@ function itemForm(k) {
     '<span class="btns"><button class="btn" data-act="modal-close">Отмена</button><button class="btn pri" data-act="citem-save" data-k="' + k + '">Сохранить</button></span></div>');
   const f = $('#e-name'); f.select();
 }
+/* переименование товара: склад, шаблоны, корзина и неотгруженные заказы переходят на новое название.
+   Отгруженные накладные и рассрочки — история, их не трогаем; склад сопоставляет их через settings.itemAlias (старое → новое). */
+function renameItem(nd, i, name) {
+  const old = nd.it[i][0]; if (!name || name === old) return true;
+  if (findItem(name) && !confirm('Товар «' + name + '» уже есть в каталоге. Остатки и история этих двух товаров объединятся. Продолжить?')) return false;
+  nd.it[i][0] = name;
+  const al = Object.assign({}, (DB.settings || {}).itemAlias);
+  delete al[name]; for (const k in al) if (al[k] === old) al[k] = name; al[old] = name;
+  DB.settings = Object.assign({}, DB.settings, { itemAlias: al });
+  const fix = it => { if (it.n === old) it.n = name; };
+  DB.stockMoves.forEach(m => { if (m.name === old) m.name = name; });
+  DB.templates.forEach(t => (t.items || []).forEach(fix));
+  DB.cart.groups.forEach(g => g.items.forEach(fix));
+  DB.orders.forEach(o => { if (o.status === 'ordered') o.groups.forEach(g => g.items.forEach(fix)); });
+  return true;
+}
+/* актуальное название товара (после переименований) — для склада */
+const itemName = n => ((DB.settings || {}).itemAlias || {})[n] || n;
 function itemByKey(k) { const p = k.lastIndexOf('|'); return [NODES[k.slice(0, p)], +k.slice(p + 1)]; }
 /* забирает отмеченные товары из их папок (с конца, чтобы не сбить номера) */
 function takeChecked() {
@@ -1256,6 +1279,7 @@ const ACT = {
       o = { id: uid(), no: DB.nextNo++, date: ck.date || todayISO(), clientId: c.id, groups, total: orderTotal(groups), status: 'ordered', shipDate: null, createdAt: Date.now() };
       DB.orders.push(o);
     }
+    if (ck.pay !== 'none' && minus(ck.amount)) return toast(MINUS_MSG);
     const amt = ck.pay === 'none' ? 0 : num(ck.amount);
     if (amt > 0) DB.payments.push({ id: uid(), clientId: c.id, amount: amt, method: ck.pay, status: 'received', date: o.date, receivedDate: o.date, orderId: o.id, note: 'предоплата', createdAt: Date.now() + 1 });
     DB.cart = { groups: [{ t: 'Шкаф 1', items: [] }], cur: 0 };
@@ -1303,7 +1327,7 @@ const ACT = {
   'order-pay': el => { UI.bulk = { ids: [el.dataset.id], method: 'transfer', date: todayISO(), amount: '' }; bulkForm(); },
   'bulk-method': el => { readBulk(); UI.bulk.method = el.dataset.v; if (el.dataset.v === 'goods') UI.bulk.amount = ''; bulkForm(); }, // товаром — сумма из кол-ва × цены
   'bulk-save': () => {
-    readBulk();
+    readBulk(); if (minus(UI.bulk.amount)) return toast(MINUS_MSG);
     const B = UI.bulk, PM = payMap(), byC = {}, d = B.date || todayISO(), now = Date.now();
     B.ids.map(order).filter(Boolean).sort((a, b) => (a.shipDate || a.date).localeCompare(b.shipDate || b.date) || a.no - b.no)
       .forEach(o => { (byC[o.clientId] = byC[o.clientId] || []).push(o); });
@@ -1317,14 +1341,14 @@ const ACT = {
       DB.payments.push({ id: uid(), clientId: cid, amount: total, method: B.method, status: B.method === 'driver' ? 'pending' : 'received', date: d, receivedDate: B.method === 'driver' ? null : d,
         orderId: null, alloc, note: (B.method === 'goods' && B.g ? goodsNote(B.g) + ' · ' : '') + 'по накладным № ' + os.map(o => o.no).join(', '),
         goods: B.method === 'goods' ? B.g : undefined, createdAt: now + k });
-      if (B.method === 'goods' && B.g) stockInGoods(B.g, cid);
+      if (B.method === 'goods' && B.g) stockInGoods(B.g, cid, DB.payments[DB.payments.length - 1].id);
     });
     UI.salesSel = {}; modal(''); commit(); toast(B.method === 'driver' ? 'Записано: ждём деньги от водителя' : 'Оплата записана');
   },
   'ship-open': el => { UI.ship = { id: el.dataset.id, date: todayISO(), pay: 'none', amount: '' }; shipForm(); },
   'ship-pay': el => { readShip(); UI.ship.pay = el.dataset.v; shipForm(); },
   'ship-do': () => {
-    readShip();
+    readShip(); if (UI.ship.pay !== 'none' && minus(UI.ship.amount)) return toast(MINUS_MSG);
     const s = UI.ship, o = order(s.id);
     o.status = 'shipped'; o.shipDate = s.date || todayISO(); o.shippedAt = Date.now();
     const amt = s.pay === 'none' ? 0 : num(s.amount);
@@ -1387,7 +1411,7 @@ const ACT = {
     const [nd, i] = itemByKey(el.dataset.k), it = nd.it[i];
     const name = $('#e-name').value.trim(); if (!name) return toast('Введите название');
     const pv = $('#e-price').value.trim(), to = NODES[$('#e-folder').value];
-    it[0] = name; it[1] = pv === '' ? null : num(pv);
+    if (!renameItem(nd, i, name)) return; it[1] = pv === '' ? null : num(pv);
     if (to && to !== nd) { to.it.push(nd.it.splice(i, 1)[0]); UI.catChecked = {}; }
     modal(''); commit(); toast(to && to !== nd ? 'Сохранено и перенесено в «' + to.n + '»' : 'Сохранено');
   },
@@ -1462,17 +1486,20 @@ const ACT = {
   },
   'pay-new': el => payForm(el.dataset.id || ''),
   'pay-save': () => {
+    if (minus($('#p-amount').value)) return toast(MINUS_MSG);
     const amt = num($('#p-amount').value); if (!amt) return toast('Введите сумму');
     const m = $('#p-method').value, d = $('#p-date').value || todayISO(), cid = $('#p-client').value, g = m === 'goods' ? readGoods('p') : null;
     if (g && !g.what) return toast('Напишите, что привёз клиент');
     const note = [g ? goodsNote(g) : '', $('#p-note').value.trim()].filter(Boolean).join(' · ');
     DB.payments.push({ id: uid(), clientId: cid, amount: amt, method: m, status: m === 'driver' ? 'pending' : 'received', date: d, receivedDate: m === 'driver' ? null : d, orderId: null, note, goods: g || undefined, createdAt: Date.now() });
-    if (g) stockInGoods(g, cid);
+    if (g) stockInGoods(g, cid, DB.payments[DB.payments.length - 1].id);
     modal(''); commit(); toast(g ? 'Оплата товаром сохранена' + (g.stock ? ', товар оприходован на склад' : '') : 'Оплата сохранена');
   },
   'pay-del': el => {
     const p = DB.payments.find(x => x.id === el.dataset.id); if (!confirm('Удалить оплату ' + rub(p.amount) + '?')) return;
-    DB.payments = DB.payments.filter(x => x !== p); const t = trashPush('payment', p, 'Оплата ' + rub(p.amount)); commit(); undoToast('Оплата удалена', [t]);
+    const moves = goodsMoves(p); DB.stockMoves = DB.stockMoves.filter(m => !moves.includes(m));
+    DB.payments = DB.payments.filter(x => x !== p); const t = trashPush('payment', p, 'Оплата ' + rub(p.amount), { moves }); commit();
+    undoToast('Оплата удалена' + (moves.length ? ', приход товара со склада убран' : ''), [t]);
   },
   recv: el => { const p = DB.payments.find(x => x.id === el.dataset.id); p.status = 'received'; p.receivedDate = todayISO(); commit(); toast(rub(p.amount) + ' получено и зачтено клиенту'); },
   'modal-close': () => modal(''),
@@ -1549,7 +1576,7 @@ const CH = {
     render();
   },
   /* корзина удалённых: см. VIEWS.trash */
-  cname: el => { const [nd, i] = itemByKey(el.dataset.k); nd.it[i][0] = el.value.trim(); save(); },
+  cname: el => { const [nd, i] = itemByKey(el.dataset.k); if (renameItem(nd, i, el.value.trim())) save(); else el.value = nd.it[i][0]; },
   cprice: el => { const [nd, i] = itemByKey(el.dataset.k); nd.it[i][1] = el.value.trim() === '' ? null : num(el.value); commit(); },
   'op-type': el => {
     const amt = document.querySelector('[data-ch="op-amt"][data-id="' + el.dataset.id + '"]');
@@ -1708,7 +1735,7 @@ document.addEventListener('dblclick', e => {
   inp.className = 'inp'; inp.value = nd.it[i][0]; inp.style.cssText = 'min-height:34px;padding:5px 10px;width:calc(100% - 22px)';
   s.replaceWith(inp); inp.focus(); inp.select();
   let done = false;
-  const finish = ok => { if (done) return; done = true; if (ok && inp.value.trim()) nd.it[i][0] = inp.value.trim(); commit(); };
+  const finish = ok => { if (done) return; done = true; if (ok && inp.value.trim()) renameItem(nd, i, inp.value.trim()); commit(); };
   inp.addEventListener('keydown', ev => { if (ev.key === 'Enter') finish(true); if (ev.key === 'Escape') finish(false); });
   inp.addEventListener('blur', () => finish(true));
 });
@@ -1903,6 +1930,7 @@ Object.assign(ACT, {
   },
   'ipay-new': el => ipayForm(el.dataset.id),
   'ipay-save': el => {
+    if (minus($('#ip-amount').value)) return toast(MINUS_MSG);
     const s = DB.installments.find(x => x.id === el.dataset.id), amt = num($('#ip-amount').value);
     if (!amt) return toast('Введите сумму');
     s.pays.push({ id: uid(), date: $('#ip-date').value || todayISO(), amount: amt, method: $('#ip-method').value, note: $('#ip-note').value.trim() });
@@ -2175,16 +2203,16 @@ function stockMap() {
   const after = (s, ts) => s.tracked && ts > s.since;
   DB.orders.forEach(o => {
     if (o.status !== 'shipped' && o.status !== 'ordered') return;
-    o.groups.forEach(g => g.items.forEach(it => { const s = get(it.n); if (o.status === 'ordered') s.res += it.q; else if (after(s, o.shippedAt || o.createdAt)) s.out += it.q; }));
+    o.groups.forEach(g => g.items.forEach(it => { const s = get(itemName(it.n)); if (o.status === 'ordered') s.res += it.q; else if (after(s, o.shippedAt || o.createdAt)) s.out += it.q; }));
   });
-  DB.installments.forEach(i => i.groups.forEach(g => g.items.forEach(it => { const s = get(it.n); if (after(s, i.createdAt)) s.out += it.q; })));
+  DB.installments.forEach(i => i.groups.forEach(g => g.items.forEach(it => { const s = get(itemName(it.n)); if (after(s, i.createdAt)) s.out += it.q; })));
   for (const n in m) { const s = m[n]; s.have = s.inQ + s.adj - s.out; s.free = s.have - s.res; }
   return m;
 }
 /* чего не хватает под конкретный заказ (его собственный резерв не считаем против него) */
 function stockShort(o) {
   const M = stockMap(), need = {};
-  o.groups.forEach(g => g.items.forEach(it => { need[it.n] = (need[it.n] || 0) + it.q; }));
+  o.groups.forEach(g => g.items.forEach(it => { const n = itemName(it.n); need[n] = (need[n] || 0) + it.q; }));
   return Object.keys(need).filter(n => M[n] && M[n].tracked).map(n => {
     const s = M[n], avail = s.have - (s.res - (o.status === 'ordered' ? need[n] : 0)) + (o.status === 'shipped' ? need[n] : 0);
     return { n, need: need[n], avail };
@@ -2517,9 +2545,14 @@ function goodsCalc(px) {
   }
   if (row) row.style.display = findItem(g.what) ? 'flex' : 'none';
 }
-function stockInGoods(g, cid) {
+/* приход на склад от оплаты товаром; у старых записей (до связи payId) — по названию, количеству и времени создания */
+function goodsMoves(p) {
+  const g = p.goods; if (!g || !g.stock) return [];
+  return DB.stockMoves.filter(m => m.payId ? m.payId === p.id : m.kind === 'in' && m.name === itemName(g.what) && m.q === Math.round(g.qty) && Math.abs(m.createdAt - p.createdAt) < 60000);
+}
+function stockInGoods(g, cid, payId) {
   if (!g.stock || !g.qty) return;
-  DB.stockMoves.push({ id: uid(), date: todayISO(), name: g.what, q: Math.round(g.qty), kind: 'in', note: 'взаимозачёт: ' + ((client(cid) || {}).name || ''), createdAt: Date.now() });
+  DB.stockMoves.push({ id: uid(), date: todayISO(), name: g.what, q: Math.round(g.qty), kind: 'in', note: 'взаимозачёт: ' + ((client(cid) || {}).name || ''), payId, createdAt: Date.now() });
 }
 Object.assign(IN, {
   'goods-calc': el => goodsCalc(el.dataset.px),

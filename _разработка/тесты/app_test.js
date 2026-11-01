@@ -52,9 +52,12 @@ const errors = [];
   input(d.getElementById('cat-q'), 'Мой шкаф'); click(d.querySelector('#cat-list .it'));
   click(d.querySelector('[data-act="to-checkout"]')); sync();
   click(d.querySelector('.chip[data-act="ck-pick"]'));
-  click([...d.querySelectorAll('[data-act="ck-pay"]')].find(b => b.dataset.v === 'driver'));
-  change(d.querySelector('[data-ch="ck-amount"]'), '3000');
   click(d.querySelector('[data-act="post"]')); sync();
+  // оплата через водителя теперь указывается при отгрузке
+  click(d.querySelector('[data-act="ship-open"]'));
+  click([...d.querySelectorAll('[data-act="ship-pay"]')].find(b => b.dataset.v === 'driver'));
+  d.getElementById('s-amount').value = '3000';
+  click(d.querySelector('[data-act="ship-do"]')); sync();
   nav('#/drivers');
   console.log('drivers pending:', d.querySelectorAll('[data-act="recv"]').length, txt('h2'));
   click(d.querySelector('[data-act="recv"]'));
@@ -77,7 +80,7 @@ const errors = [];
   // перетаскивание товара на папку
   click([...d.querySelectorAll('.tn')].find(x => x.textContent.includes('Подпапка')));
   const ev = (type, el) => { const e = new w.Event(type, { bubbles: true, cancelable: true }); e.dataTransfer = { setData() {} }; el.dispatchEvent(e); };
-  ev('dragstart', d.querySelector('[data-cdrag="0"]')); const tgt = [...d.querySelectorAll('.tn')].find(x => x.textContent.includes('Моя папка'));
+  ev('dragstart', d.querySelector('tbody tr[draggable]')); const tgt = [...d.querySelectorAll('.tn')].find(x => x.textContent.includes('Моя папка'));
   ev('dragover', tgt); ev('drop', tgt);
   const db2 = JSON.parse(w.localStorage.getItem('livaro_db_v1'));
   console.log('drag item back:', db2.cat[0].it.map(x => x[0]).join(','), '| sub:', db2.cat[0].ch[0].it.length);
