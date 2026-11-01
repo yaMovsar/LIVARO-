@@ -65,7 +65,7 @@
 </div>
 <div id="msg" role="status"></div>
 <script>
-const ROLES = { admin: 'Руководитель (все права)', accountant: 'Бухгалтер', manager: 'Менеджер продаж', storekeeper: 'Склад' };
+const ROLES = { admin: 'Руководитель (все права)', accountant: 'Бухгалтер', manager: 'Менеджер продаж', storekeeper: 'Склад', viewer: 'Управляющий (только остатки склада)' };
 const esc = s => String(s == null ? '' : s).replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' })[c]);
 const $ = s => document.querySelector(s);
 const msg = t => { const m = $('#msg'); m.textContent = t; m.style.display = 'block'; clearTimeout(msg.t); msg.t = setTimeout(() => m.style.display = 'none', 3500); };

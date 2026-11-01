@@ -80,6 +80,19 @@ const check = (name, ok, extra) => { console.log((ok ? 'OK   ' : 'FAIL ') + name
     r = await post('/api/users/1', { active: false }, boss); check('нельзя отключить самого себя', r.status === 400);
     r = await get('/admin.html', boss); check('страница руководителя', r.status === 200);
 
+    // управляющий: только остатки, без цен и клиентов, изменять нельзя
+    await post('/api/sync', { changes: [{ coll: 'clients', id: 'c9', data: { id: 'c9', name: 'Секретный Клиент', opening: 0, createdAt: 5 }, base: 0 },
+      { coll: 'orders', id: 'o9', data: { id: 'o9', no: 7, status: 'shipped', clientId: 'c9', total: 99000, date: '2026-11-01', shipDate: '2026-11-01', shippedAt: 6, createdAt: 6, groups: [{ t: 'Шкаф Секрет', items: [{ n: 'Товар', q: 2, p: 49500 }] }] }, base: 0 },
+      { coll: 'payments', id: 'p9', data: { id: 'p9', clientId: 'c9', amount: 99000, method: 'cash', status: 'received', createdAt: 7 }, base: 0 }] }, boss);
+    r = await post('/api/users', { login: 'upr', name: 'Управляющий', role: 'viewer', password: '654321' }, boss); check('руководитель добавляет управляющего', r.ok && (await r.json()).user.role === 'viewer');
+    const vc = await login('upr', '654321'); check('управляющий входит', !!vc);
+    d = await (await get('/LIVARO.html', vc)).text();
+    check('в программе управляющего нет клиентов, цен и сумм', d.includes('"Товар"') && !d.includes('Секретный') && !d.includes('49500') && !d.includes('99000') && !d.includes('Шкаф Секрет') && d.includes('"role":"viewer"'));
+    d = await (await get('/api/changes?since=0', vc)).json();
+    check('изменения для управляющего — только склад, заказы без денег', d.changes.every(c => ['orders', 'installments', 'stockMoves', 'meta'].includes(c.coll)) && d.changes.some(c => c.coll === 'orders' && c.data && c.data.groups[0].items[0].q === 2 && !('total' in c.data) && !('clientId' in c.data)), d.changes.map(c => c.coll).join(','));
+    r = await post('/api/sync', { changes: [{ coll: 'stockMoves', id: 's2', data: { id: 's2', name: 'Товар', q: 99, kind: 'in' }, base: 0 }] }, vc); check('управляющему изменять нельзя (403)', r.status === 403);
+    r = await get('/api/users', vc); check('управляющему список сотрудников закрыт', r.status === 403);
+
     // журнал
     d = await (await get('/api/audit', boss)).json();
     const acts = d.rows.map(r => r.action + ':' + r.coll + (r.login ? '@' + r.login : ''));

@@ -94,7 +94,9 @@
   }
 
   /* отправить свои изменения */
+  var viewer = (B.user || {}).role === 'viewer'; // управляющий только смотрит — ничего не отправляем
   function push() {
+    if (viewer) { dirty = false; return Promise.resolve(); }
     if (busy) { dirty = true; return Promise.resolve(); }
     var cur = current(), sent = new Map(), changes = [];
     cur.forEach(function (v, k) { var s = stable(v); if (base.get(k) !== s) { sent.set(k, s); changes.push([k, v]); } });
@@ -144,7 +146,7 @@
   window.save = function () { origSave(); dirty = true; schedule(); };
   window.render = function () { origRender(); userBox(); };
 
-  var ROLE = { admin: 'руководитель', accountant: 'бухгалтер', manager: 'менеджер', storekeeper: 'склад' };
+  var ROLE = { admin: 'руководитель', accountant: 'бухгалтер', manager: 'менеджер', storekeeper: 'склад', viewer: 'управляющий' };
   function setState(s) { state = s; var el = document.getElementById('on-state'); if (el) el.outerHTML = stateHtml(); }
   function stateHtml() {
     var t = state === 'saving' ? ['сохраняю…', '#B07A00'] : state === 'offline' ? ['нет связи — изменения отправятся сами', '#B3261E'] : needRender ? ['есть обновления — появятся, когда закончите ввод', '#1F4FB5'] : ['всё сохранено на сервере', '#1E7A46'];
@@ -166,6 +168,7 @@
     push().then(function () { return api('/api/logout', {}); }).then(function () { location.href = '/login.html'; }, function () { location.href = '/login.html'; });
   });
   window.addEventListener('beforeunload', function (e) {
+    if (viewer) return;
     var unsent = busy || dirty || (function () { var cur = current(), d = false; cur.forEach(function (v, k) { if (!d && base.get(k) !== stable(v)) d = true; }); return d; })();
     if (unsent) { push(); e.preventDefault(); e.returnValue = 'Изменения ещё отправляются на сервер'; }
   });

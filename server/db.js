@@ -8,7 +8,7 @@ const crypto = require('crypto');
 
 const COLLS = ['clients', 'orders', 'payments', 'templates', 'trash', 'installments', 'stockMoves', 'meta'];
 const META_IDS = ['cat', 'settings', 'counters'];
-const ROLES = { admin: 'Руководитель (все права)', accountant: 'Бухгалтер', manager: 'Менеджер продаж', storekeeper: 'Склад' };
+const ROLES = { admin: 'Руководитель (все права)', accountant: 'Бухгалтер', manager: 'Менеджер продаж', storekeeper: 'Склад', viewer: 'Управляющий (только остатки склада)' };
 
 const SCHEMA = `
 create table if not exists users(

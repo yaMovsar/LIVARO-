@@ -20,7 +20,8 @@ const w = dom.window, d = w.document;
 const click = el => { if (!el) throw new Error('no element'); el.dispatchEvent(new w.MouseEvent('click', { bubbles: true })); };
 const input = (el, v) => { el.value = v; el.dispatchEvent(new w.Event('input', { bubbles: true })); };
 const sync = () => w.dispatchEvent(new w.HashChangeEvent('hashchange'));
-const rows = () => [...d.querySelectorAll('.tcard tbody tr')].map(r => r.children[0].textContent.slice(0, 22) + ': склад ' + r.children[1].textContent + ', резерв ' + r.children[2].textContent + ', доступно ' + r.children[3].textContent).join(' | ');
+// склад карточками (01.11.2026): модель — карточка, в ней цвета с остатком
+const rows = () => [...d.querySelectorAll('.scard')].map(c => c.querySelector('.stt b').textContent.slice(0, 22) + ': ' + [...c.querySelectorAll('.srow')].map(r => r.textContent.replace(/\s+/g, '')).join(',') + (c.querySelector('.sfoot .muted:last-child') ? ' (' + c.querySelector('.sfoot .muted:last-child').textContent + ')' : '')).join(' | ');
 try {
   console.log('1 пустой склад:', d.querySelector('.empty').textContent.slice(0, 40));
   // приход: корпус 6х белый 5 шт, затем «сохранить и ещё» — двери 10
@@ -35,13 +36,13 @@ try {
   click(d.querySelector('[data-act="ship-open"]')); click(d.querySelector('[data-act="ship-do"]'));
   w.location.hash = '#/stock'; sync(); console.log('4 после отгрузки:', rows());
   // инвентаризация: дверей реально 3
-  click([...d.querySelectorAll('[data-act="sk-open"][data-kind="adj"]')].find(b => b.dataset.name === DA));
+  click([...d.querySelectorAll('[data-act="sk-cell"]')].find(b => b.dataset.name === DA)); click(d.querySelector('#modal [data-act="sk-open"][data-kind="adj"]'));
   d.getElementById('sk-n').value = '3'; click(d.querySelector('[data-act="sk-save"]:not([data-more])'));
   console.log('5 инвентаризация двери = 3:', rows());
   // новый заказ на 6 дверей при 3 на складе — предупреждение
   w.eval('DB.orders.push({id:"e",no:4,date:todayISO(),status:"ordered",clientId:"c1",groups:[{t:"x",items:[{n:' + JSON.stringify(DA) + ',q:6,p:0}]}],total:0,createdAt:9});commit();');
   w.location.hash = '#/sale/e'; sync(); console.log('6 нехватка в заказе:', d.querySelector('.aside .card').textContent.replace(/\s+/g, ' '));
-  w.location.hash = '#/stock'; sync(); click(d.querySelector('[data-act="st-f"][data-v="short"]')); console.log('  фильтр «не хватает»:', rows());
+  w.location.hash = '#/stock'; sync(); click(d.querySelector('[data-act="st-f"][data-v="no"]')); console.log('  фильтр «нет / в заказах»:', rows());
   // отчёты
   w.location.hash = '#/reports'; sync();
   console.log('7 отчёт:', [...d.querySelectorAll('.kpi')].map(k => k.querySelector('.l').textContent + ' ' + k.querySelector('.v').textContent).join(' | '));

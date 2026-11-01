@@ -10,6 +10,23 @@ const MIME = { '.html': 'text/html; charset=utf-8', '.js': 'text/javascript; cha
   '.png': 'image/png', '.svg': 'image/svg+xml', '.ico': 'image/x-icon', '.woff2': 'font/woff2' };
 const MAX_BODY = 30 * 1024 * 1024;
 
+/* управляющий (роль viewer) видит только остатки: из записей убираем цены, клиентов, суммы и заметки;
+   клиенты, оплаты, шаблоны, удалённые и счётчики ему не отдаются вовсе */
+const VIEW_COLLS = ['orders', 'installments', 'stockMoves', 'meta'];
+function forViewer(d) {
+  if (!VIEW_COLLS.includes(d.coll) || (d.coll === 'meta' && d.id === 'counters')) return null;
+  if (d.data == null) return d;
+  const x = d.data, lines = g => ({ t: '', items: (g.items || []).map(it => ({ n: it.n, q: it.q })) });
+  let data;
+  if (d.coll === 'meta' && d.id === 'cat') { const strip = l => (l || []).map(n => ({ n: n.n, ch: strip(n.ch), it: (n.it || []).map(it => [it[0], null]) })); data = strip(x); }
+  else if (d.coll === 'meta') data = { itemAlias: x.itemAlias, stockMin: x.stockMin, stockMinF: x.stockMinF };
+  else if (d.coll === 'stockMoves') data = { id: x.id, name: x.name, q: x.q, kind: x.kind, date: x.date, createdAt: x.createdAt };
+  else if (d.coll === 'orders') data = { id: x.id, no: x.no, status: x.status, date: x.date, shipDate: x.shipDate, shippedAt: x.shippedAt, createdAt: x.createdAt, groups: (x.groups || []).map(lines) };
+  else data = { id: x.id, date: x.date, createdAt: x.createdAt, groups: (x.groups || []).map(lines) };
+  return Object.assign({}, d, { data });
+}
+const viewDocs = (user, list) => user.role === 'viewer' ? list.map(forViewer).filter(Boolean) : list;
+
 function createApp(S, opts) {
   opts = opts || {};
   const log = opts.log || (() => {});
@@ -61,7 +78,7 @@ function createApp(S, opts) {
   /* программа с данными: данные вставляются прямо в страницу, чтобы программа стартовала сразу с ними */
   async function serveApp(req, res, user) {
     const B = await S.boot();
-    B.user = user;
+    B.docs = viewDocs(user, B.docs); B.user = user;
     const LS = new RegExp(String.fromCharCode(0x2028), 'g'), PS = new RegExp(String.fromCharCode(0x2029), 'g'); // эти символы ломают <script>
     const BS = String.fromCharCode(92); // обратная косая: «<» и разделители строк заменяются кодами вида u003c
     const data = JSON.stringify(B).replace(/</g, BS + 'u003c').replace(LS, BS + 'u2028').replace(PS, BS + 'u2029');
@@ -119,8 +136,11 @@ function createApp(S, opts) {
     const af = appFile(p); if (af && (m === 'GET' || m === 'HEAD')) return serveFile(req, res, af);
 
     if (p === '/api/me') return json(res, 200, { user });
-    if (p === '/api/changes' && m === 'GET') return json(res, 200, await S.changes(Math.max(0, parseInt(url.searchParams.get('since'), 10) || 0)));
-    if (p === '/api/sync' && m === 'POST') { const b = await body(req); return json(res, 200, await S.sync(user, cleanChanges(b.changes))); }
+    if (p === '/api/changes' && m === 'GET') { const ch = await S.changes(Math.max(0, parseInt(url.searchParams.get('since'), 10) || 0)); ch.changes = viewDocs(user, ch.changes); return json(res, 200, ch); }
+    if (p === '/api/sync' && m === 'POST') {
+      if (user.role === 'viewer') return json(res, 403, { error: 'Только просмотр: изменять данные нельзя' });
+      const b = await body(req); return json(res, 200, await S.sync(user, cleanChanges(b.changes)));
+    }
 
     // только руководитель: сотрудники и журнал изменений
     if (p.startsWith('/api/users') || p === '/api/audit') {
