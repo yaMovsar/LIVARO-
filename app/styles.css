@@ -416,3 +416,17 @@ label.chk{display:flex;gap:8px;align-items:center;font-size:13.5px;cursor:pointe
 @media (max-width:900px){.stiles{grid-template-columns:1fr 1fr}}
 .sbadge{white-space:nowrap;flex:none}.scard .sg>span:first-child{overflow:hidden;text-overflow:ellipsis;white-space:nowrap;min-width:0}
 @media (max-width:760px){.stiles{grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}.stile{min-width:0;padding:10px 12px}.stile .v{font-size:22px}.scards{grid-template-columns:minmax(0,1fr)}.main{width:auto;max-width:100%;min-width:0}.search{max-width:none;margin-left:0;flex-basis:100%}}
+
+/* ===== отчёт по месяцам (01.11.2026) ===== */
+.mup{color:#13795B;font-weight:600;white-space:nowrap}.mdown{color:#B3261E;font-weight:600;white-space:nowrap}
+.mtable tr.mgone td{color:var(--muted)}
+.mtw{display:inline-block;width:16px;color:var(--muted);font-size:11px}
+.mtable tr.mdet td{background:#F8FAFC;padding:10px 14px 14px 30px}
+.mdet-in{display:grid;grid-template-columns:minmax(0,2fr) minmax(0,1fr);gap:24px}
+.mdet-in .line{font-size:13.5px}
+.mdocs{display:flex;flex-wrap:wrap;gap:6px;margin-top:6px}
+.mdocs a{font-size:13px;background:#EEF2FA;border-radius:6px;padding:2px 8px;text-decoration:none}
+.mtable tr.mtot td{font-weight:700;border-top:2px solid var(--line)}
+.mprint-h{display:none}
+@media print{.mprint-h{display:block;margin:0 0 8px}.mtw{display:none}}
+@media (max-width:760px){.mdet-in{grid-template-columns:1fr}}
