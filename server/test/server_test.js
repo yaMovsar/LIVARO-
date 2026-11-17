@@ -21,6 +21,17 @@ const check = (name, ok, extra) => { console.log((ok ? 'OK   ' : 'FAIL ') + name
     let r = await get('/LIVARO.html'); check('без входа программа → страница входа', r.status === 302 && r.headers.get('location') === '/login.html');
     r = await get('/api/changes?since=0'); check('без входа API → 401', r.status === 401);
     r = await get('/login.html'); check('страница входа открывается', r.status === 200 && (await r.text()).includes('Войти'));
+    // значок на телефоне: открыто без входа, но только эти файлы
+    r = await get('/manifest.webmanifest'); const mf = r.status === 200 ? await r.json() : {};
+    check('описание приложения без входа', r.headers.get('content-type').startsWith('application/manifest+json') && mf.short_name === 'LIVARO' && mf.start_url === '/LIVARO.html' && mf.display === 'standalone');
+    for (const ic of mf.icons || []) { r = await get(ic.src); check('значок ' + ic.src + ' без входа', r.status === 200 && r.headers.get('content-type') === 'image/png'); }
+    r = await get('/app/icons/apple-touch-icon.png'); check('значок iPhone без входа', r.status === 200);
+    r = await get('/sw.js'); check('помощник /sw.js без входа', r.status === 200 && /javascript/.test(r.headers.get('content-type')) && (await r.text()).includes('offline.html'));
+    r = await get('/offline.html'); check('страница «Нет связи» без входа', r.status === 200 && (await r.text()).includes('Нет связи'));
+    r = await get('/app/pwa.js'); check('pwa.js без входа', r.status === 200);
+    r = await get('/app/app.js'); check('остальные файлы программы без входа закрыты', r.status === 302);
+    r = await get('/app/icons/../app.js'); check('через папку значков к программе не пройти', r.status !== 200);
+    r = await get('/login.html'); const lh = await r.text(); check('на странице входа — значок и описание приложения', lh.includes('rel="manifest"') && lh.includes('apple-touch-icon') && lh.includes('/app/pwa.js'));
     r = await req('/api/login', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: '{"login":"boss","password":"secret123"}' });
     check('POST без заголовка X-LIVARO отклонён', r.status === 403);
 
@@ -35,6 +46,8 @@ const check = (name, ok, extra) => { console.log((ok ? 'OK   ' : 'FAIL ') + name
     // файлы: только программа
     r = await get('/LIVARO.html', boss); const html = await r.text();
     check('программа с данными и синхронизацией', r.status === 200 && html.includes('window.LIVARO_BOOT=') && html.includes('app/online.js') && html.indexOf('online-boot.js') < html.indexOf('app/app.js'));
+    check('в программе — значок и описание приложения', html.includes('rel="manifest"') && html.includes('apple-touch-icon') && html.includes('app/pwa.js') && html.indexOf('rel="manifest"') < html.indexOf('</head>'));
+    r = await get('/login.html', boss); check('вошедшего страница входа отправляет в программу', r.status === 302 && r.headers.get('location') === '/LIVARO.html');
     r = await get('/', boss); check('/ → программа', r.status === 302 && r.headers.get('location') === '/LIVARO.html');
     r = await req('/app/app.js', { headers: { cookie: boss, 'accept-encoding': 'gzip' } }); check('app/app.js отдаётся сжатым', r.status === 200 && r.headers.get('content-encoding') === 'gzip');
     const etag = r.headers.get('etag'); r = await req('/app/app.js', { headers: { cookie: boss, 'if-none-match': etag } }); check('повторно — 304 (из кэша)', r.status === 304);

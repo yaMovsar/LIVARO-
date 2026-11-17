@@ -1,0 +1,26 @@
+<!doctype html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="theme-color" content="#FFFFFF">
+<title>LIVARO — нет связи</title>
+<style>
+  body{margin:0;min-height:100vh;display:flex;align-items:center;justify-content:center;background:#F4F5F7;color:#16191D;font-family:"Segoe UI",Arial,sans-serif;padding:16px;box-sizing:border-box}
+  .box{width:100%;max-width:380px;background:#fff;border:1px solid #DDE1E6;border-radius:16px;padding:28px 24px;text-align:center}
+  img{width:72px;height:72px;border-radius:16px}
+  h1{font-size:22px;margin:16px 0 8px}
+  p{color:#5B636E;font-size:15px;line-height:1.5;margin:0 0 22px}
+  button{width:100%;font:inherit;font-size:16px;font-weight:700;padding:13px;border:0;border-radius:10px;background:#1E56B3;color:#fff;cursor:pointer}
+</style>
+</head>
+<body>
+<div class="box">
+  <img src="/app/icons/icon-192.png" alt="LIVARO">
+  <h1>Нет связи</h1>
+  <p>Программа не может связаться с сервером. Проверьте интернет на телефоне и нажмите «Повторить».</p>
+  <button onclick="location.reload()">Повторить</button>
+</div>
+<script>window.addEventListener('online', () => location.reload());</script>
+</body>
+</html>

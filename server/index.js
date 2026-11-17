@@ -7,7 +7,12 @@ const { connectPg, connectLite, store, httpErr, COLLS, META_IDS } = require('./d
 
 const ROOT = path.join(__dirname, '..');
 const MIME = { '.html': 'text/html; charset=utf-8', '.js': 'text/javascript; charset=utf-8', '.css': 'text/css; charset=utf-8', '.json': 'application/json; charset=utf-8',
-  '.png': 'image/png', '.svg': 'image/svg+xml', '.ico': 'image/x-icon', '.woff2': 'font/woff2' };
+  '.png': 'image/png', '.svg': 'image/svg+xml', '.ico': 'image/x-icon', '.woff2': 'font/woff2', '.webmanifest': 'application/manifest+json; charset=utf-8' };
+/* значок на телефоне (приложение): эти строки вставляются в <head> программы и страницы входа */
+const PWA_HEAD = '<link rel="manifest" href="/manifest.webmanifest">\n<meta name="theme-color" content="#FFFFFF">\n' +
+  '<link rel="icon" type="image/png" sizes="32x32" href="/app/icons/favicon-32.png">\n<link rel="apple-touch-icon" href="/app/icons/apple-touch-icon.png">\n' +
+  '<meta name="apple-mobile-web-app-capable" content="yes">\n<meta name="mobile-web-app-capable" content="yes">\n' +
+  '<meta name="apple-mobile-web-app-title" content="LIVARO">\n<meta name="apple-mobile-web-app-status-bar-style" content="default">\n';
 const MAX_BODY = 30 * 1024 * 1024;
 
 /* управляющий (роль viewer) видит только остатки: из записей убираем цены, клиентов, суммы и заметки;
@@ -84,7 +89,8 @@ function createApp(S, opts) {
     const data = JSON.stringify(B).replace(/</g, BS + 'u003c').replace(LS, BS + 'u2028').replace(PS, BS + 'u2029');
     let html = fs.readFileSync(path.join(ROOT, 'LIVARO.html'), 'utf8');
     html = html.replace(/(<script src="app\/app\.js[^"]*"><\/script>)/,
-      '<script>window.LIVARO_BOOT=' + data + ';</script><script src="app/online-boot.js"></script>\n$1\n<script src="app/online.js"></script>');
+      '<script>window.LIVARO_BOOT=' + data + ';</script><script src="app/online-boot.js"></script>\n$1\n<script src="app/online.js"></script>\n<script src="app/pwa.js"></script>');
+    html = html.replace('</head>', PWA_HEAD + '</head>');
     const gz = /gzip/.test(req.headers['accept-encoding'] || '');
     send(res, 200, gz ? zlib.gzipSync(html) : html, Object.assign({ 'Content-Type': 'text/html; charset=utf-8' }, gz ? { 'Content-Encoding': 'gzip', Vary: 'Accept-Encoding' } : {}));
   }
@@ -105,7 +111,20 @@ function createApp(S, opts) {
   async function handle(req, res) {
     const url = new URL(req.url, 'http://x'), p = url.pathname, m = req.method;
     if (p === '/healthz') return send(res, 200, 'ok');
-    if (p === '/login.html' || p === '/login') return serveFile(req, res, 'server/login.html');
+    // значок на телефоне: описание приложения, помощник, «Нет связи» и картинки значка открыты без входа (данных в них нет)
+    if (m === 'GET' || m === 'HEAD') {
+      if (p === '/manifest.webmanifest') return serveFile(req, res, 'server/pwa/manifest.webmanifest');
+      if (p === '/sw.js') return serveFile(req, res, 'server/pwa/sw.js');
+      if (p === '/offline.html') return serveFile(req, res, 'server/pwa/offline.html');
+      if (p === '/favicon.ico') return serveFile(req, res, 'app/icons/favicon-32.png');
+      if (/^\/app\/icons\/[a-z0-9-]+\.(png|svg)$/.test(p)) return serveFile(req, res, p.slice(1));
+      if (p === '/app/pwa.js') return serveFile(req, res, 'app/pwa.js');
+    }
+    if (p === '/login.html' || p === '/login') {
+      // уже вошёл (например, значок на iPhone добавили со страницы входа) — сразу в программу
+      if (await S.session(cookies(req).livaro_sid)) return redirect(res, '/LIVARO.html');
+      return serveFile(req, res, 'server/login.html');
+    }
 
     // POST-запросы принимаем только от нашей программы (защита от подделки запросов с чужих сайтов)
     if (m === 'POST' && req.headers['x-livaro'] !== '1') return json(res, 403, { error: 'Запрос отклонён' });
