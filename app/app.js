@@ -327,14 +327,39 @@ const go = h => { location.hash = h; };
 const pendingCount = () => DB.payments.filter(p => p.status === 'pending').length;
 const cartCount = () => DB.cart.groups.reduce((s, g) => s + g.items.length, 0);
 
+const navItems = () => [
+  ['home', 'Главная'], ['order', 'Оформить заказ', cartCount(), 'cta'], ['sales', 'Продажи', waitingOrders().length], ['inst', 'Рассрочка', instLate()], ['catalog', 'Товары'], ['stock', 'Склад'],
+  ['clients', 'Клиенты и баланс'], ['drivers', 'Деньги у водителей', pendingCount()], ['payments', 'Оплаты'], ['reports', 'Отчёты'], ['sep'],
+  ['trash', 'Удалённые', DB.trash.length], ['data', 'Данные и копии']
+];
+const navActive = name => ({ sale: 'sales', checkout: 'order', client: 'clients', opening: 'clients', print: 'sales', labels: 'sales', inv: 'stock', invprint: 'stock', ins: 'inst', instnew: 'order', iprint: 'inst' }[name] || name);
+/* телефон: верхняя полоса с кнопкой меню (само меню выезжает слева) */
+function mtopHtml(name) {
+  if (isViewer()) return '<b class="mlogo">LIVARO</b><span class="mtitle">Склад</span>';
+  const cur = navItems().find(x => x[0] === navActive(name)), cc = cartCount();
+  return '<button class="mburger" data-act="menu" aria-label="Меню">☰</button><b class="mlogo">LIVARO</b><span class="mtitle">' + (cur ? cur[1] : '') + '</span>' +
+    '<a class="btn sm pri" href="#/order">+ Заказ' + (cc ? ' <span class="cnt">' + cc + '</span>' : '') + '</a>';
+}
+/* телефон: редкие кнопки прячутся под «Ещё ⋯» (на компьютере видны как обычно) */
+const rareBtns = h => '<span class="rare">' + h + '</span>';
+const moreBtn = h => h.includes('class="rare"') ? '<button class="btn mob-only" data-act="more">Ещё ⋯</button>' : '';
+const isPhone = () => !!(window.matchMedia && matchMedia('(max-width:760px)').matches);
+/* где каталог относительно корзины: на компьютере справа, на телефоне ниже */
+const catWhere = () => isPhone() ? 'ниже' : 'справа';
+/* телефон: таблицы показываются карточками — каждой клетке подпись из шапки таблицы */
+function labelCells(root) {
+  root.querySelectorAll('table.t').forEach(t => {
+    const hs = []; t.querySelectorAll('thead tr:first-child th').forEach(th => { for (let k = 0; k < (th.colSpan || 1); k++) hs.push(th.textContent.trim()); });
+    if (!hs.some(Boolean)) return;
+    t.querySelectorAll('tbody tr, tfoot tr').forEach(tr => {
+      let col = 0;
+      [...tr.children].forEach(td => { if (hs[col] && !td.dataset.l) td.dataset.l = hs[col]; col += td.colSpan || 1; });
+    });
+  });
+}
 function sideHtml(name) {
   if (isViewer()) return '<div class="logo"><b>LIVARO</b><span>Склад · только просмотр</span></div><a class="nav on" href="#/stock" aria-current="page"><span>' + icon('stock') + 'Склад</span></a>';
-  const items = [
-    ['home', 'Главная'], ['order', 'Оформить заказ', cartCount(), 'cta'], ['sales', 'Продажи', waitingOrders().length], ['inst', 'Рассрочка', instLate()], ['catalog', 'Товары'], ['stock', 'Склад'],
-    ['clients', 'Клиенты и баланс'], ['drivers', 'Деньги у водителей', pendingCount()], ['payments', 'Оплаты'], ['reports', 'Отчёты'], ['sep'],
-    ['trash', 'Удалённые', DB.trash.length], ['data', 'Данные и копии']
-  ];
-  const active = { sale: 'sales', checkout: 'order', client: 'clients', opening: 'clients', print: 'sales', labels: 'sales', inv: 'stock', invprint: 'stock', ins: 'inst', instnew: 'order', iprint: 'inst' }[name] || name;
+  const items = navItems(), active = navActive(name);
   return '<div class="logo"><b>LIVARO</b><span>Учёт производства</span></div>' + items.map(([k, l, c, cls]) =>
     k === 'sep' ? '<div class="sep"></div>' :
       '<a class="nav' + (cls ? ' ' + cls : '') + (active === k && !cls ? ' on' : '') + '" href="#/' + k + '"' + (active === k ? ' aria-current="page"' : '') + '><span>' + icon(k) + l + '</span>' +
@@ -368,10 +393,14 @@ function render() {
   // сохраняем прокрутку списков между перерисовками
   const keep = {}; document.querySelectorAll('[data-ks]').forEach(el => { keep[el.dataset.ks] = el.scrollTop; });
   $('#side').innerHTML = sideHtml(r.name);
+  if ($('#mtop')) $('#mtop').innerHTML = mtopHtml(r.name);
+  document.body.classList.remove('menu-open');
   $('#main').innerHTML = view(r.args) + (saveFailed ? '<div class="warn">Не удалось сохранить данные в браузере. Сделайте копию в разделе «Данные и копии».</div>' : '');
   document.querySelectorAll('[data-ks]').forEach(el => { if (keep[el.dataset.ks]) el.scrollTop = keep[el.dataset.ks]; });
-  $('#main').classList.toggle('has-bulk', !!$('.bulkbar'));
+  $('#main').classList.toggle('has-bulk', !!$('.bulkbar, .mcart'));
 }
+// подписи клеток ставим и после частичных перерисовок (поиск, раскрытие строк)
+if (window.MutationObserver) new MutationObserver(() => labelCells($('#main'))).observe($('#main'), { childList: true, subtree: true });
 function commit() { save(); render(); }
 
 /* ================= ГЛАВНАЯ ================= */
@@ -447,7 +476,7 @@ function cartHtml() {
     let h = '<div class="gbox' + (g === C.cur ? ' cur' : '') + '" data-act="gsel" data-g="' + g + '"><div class="ghead"><input class="inp" data-ch="gtitle" data-g="' + g + '" value="' + esc(G.t) + '" aria-label="Название группы">' +
       (g === C.cur ? '<span class="cur-tag">ТЕКУЩАЯ</span>' : '') + '<span class="gsum">' + rub(gsum(G)) + '</span>' +
       (G.items.length ? '<button class="btn sm" data-act="tpl-save" data-g="' + g + '" title="Сохранить этот шкаф как шаблон">В шаблоны</button>' : '') + '<button class="x" data-act="gdel" data-g="' + g + '" aria-label="Удалить группу">×</button></div><table class="gt">';
-    if (!G.items.length) h += '<tr><td class="hint">Нажимайте товары в каталоге справа — они добавятся сюда</td></tr>';
+    if (!G.items.length) h += '<tr><td class="hint">Нажимайте товары в каталоге ' + catWhere() + ' — они добавятся сюда</td></tr>';
     G.items.forEach((it, i) => {
       // перетаскивание только за ручку ⠿ — чтобы правка цены мышкой не таскала строку
       h += '<tr data-drag="' + g + '|' + i + '"><td><div class="nmrow"><span class="handle" data-grip title="Потяните, чтобы поменять порядок или перенести в другой шкаф" aria-hidden="true">⠿</span><span>' + esc(it.n) + '</span></div>' + short(it.n) + '</td>' +
@@ -494,18 +523,20 @@ VIEWS.order = () => {
   if (DB.cart.editId && (!ed || ed.status !== 'ordered')) delete DB.cart.editId;
   return (ed && DB.cart.editId ? '<div class="warn"><span><b>Изменение заказа № ' + ed.no + '.</b> Поменяйте товары и нажмите «Оформить заказ →», чтобы сохранить.</span><button class="btn sm" data-act="edit-cancel">Отменить изменение</button></div>' : '') +
     '<div class="head"><div><div class="crumb">Оформить заказ · шаг 1 из 2</div><h1>Корзина</h1>' +
-    (cc ? '<div class="sub-h">' + DB.cart.groups.filter(g => g.items.length).length + ' шк. · ' + cc + ' поз. · <b>' + rub(tot) + '</b></div>' : '<div class="sub-h">Выберите товары в каталоге справа или шаблон</div>') + '</div>' +
+    (cc ? '<div class="sub-h">' + DB.cart.groups.filter(g => g.items.length).length + ' шк. · ' + cc + ' поз. · <b>' + rub(tot) + '</b></div>' : '<div class="sub-h">Выберите товары в каталоге ' + catWhere() + ' или шаблон</div>') + '</div>' +
     // одна главная кнопка; редкие действия — в меню «Ещё»
     (cc ? '<div class="btns" style="position:relative"><button class="btn" data-act="cart-menu" aria-haspopup="true" aria-expanded="' + (UI.cartMenu ? 'true' : 'false') + '">Ещё <span aria-hidden="true" style="font-size:11px">▼</span></button>' +
       (UI.cartMenu ? '<div class="menu" role="menu" style="min-width:270px"><button role="menuitem" data-act="to-inst"' + (DB.cart.editId ? ' disabled' : '') + '>Оформить в рассрочку (розница)</button>' +
         '<div class="msep"></div><button role="menuitem" class="mdanger" data-act="cart-clear">Очистить корзину</button></div>' : '') +
       '<button class="btn pri" data-act="to-checkout">Оформить заказ →</button></div>' : '') + '</div>' +
-    '<div class="row"><div class="grow">' + templatesCard() + '<div class="card">' +
+    '<div class="row"><div class="grow">' + templatesCard() + '<div class="card" id="cart-card">' +
     '<div style="display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap;margin-bottom:6px"><h2 style="margin:0">Товары в заказе</h2><button class="btn dash" data-act="gnew">+ Новая группа (шкаф)</button></div>' +
-    '<div class="hint" style="margin-bottom:12px;display:flex;justify-content:space-between;gap:10px;flex-wrap:wrap"><span>Синяя группа — текущая. Чтобы поменять порядок или перенести строку в другой шкаф, тяните её за значок ⠿ слева.</span>' +
+    '<div class="hint" style="margin-bottom:12px;display:flex;justify-content:space-between;gap:10px;flex-wrap:wrap"><span>' + (isPhone() ? 'Синяя группа — текущая: товары из каталога добавляются в неё. Нажмите на группу, чтобы сделать её текущей.' : 'Синяя группа — текущая. Чтобы поменять порядок или перенести строку в другой шкаф, тяните её за значок ⠿ слева.') + '</span>' +
     '<button class="btn sm" data-act="as-toggle" title="Подсказки по составу шкафа">✦ Помощник: ' + (asstOn() ? 'вкл' : 'выкл') + '</button></div>' +
     cartHtml() + (cc ? '<div class="cart-foot"><div><div class="muted">Итого</div><div class="sum">' + rub(tot) + '</div></div><button class="btn pri big" data-act="to-checkout">Оформить заказ →</button></div>' : '') + '</div></div>' +
-    '<div class="aside" style="flex-basis:440px">' + catalogPicker() + '</div></div>';
+    '<div class="aside" style="flex-basis:440px">' + catalogPicker() + '</div></div>' +
+    // телефон: итог корзины всегда внизу экрана, пока выбираешь товары в каталоге
+    (cc ? '<div class="mcart noprint"><button class="mcart-sum" data-act="cart-top"><span>' + cc + ' поз. · к корзине ↑</span><b>' + rub(tot) + '</b></button><button class="btn pri" data-act="to-checkout">Оформить →</button></div>' : '');
 };
 
 /* ================= ОФОРМЛЕНИЕ ================= */
@@ -731,10 +762,10 @@ VIEWS.sale = ([id]) => {
   }[jd];
   const dd = o.status === 'ordered' ? daysSince(o.date) : 0;
   let btns;
-  if (o.status === 'ordered') btns = '<button class="btn pri big" data-act="ship-open" data-id="' + o.id + '">Отгрузить</button><a class="btn" href="#/print/l/' + o.id + '">Печать: грузчику</a><a class="btn" href="#/print/c/' + o.id + '">Печать: заказ клиенту</a>' + waBtn(o) + '<a class="btn" href="#/labels/' + o.id + '">Этикетки на коробки</a>' +
-    payBtn + '<button class="btn" data-act="order-edit" data-id="' + o.id + '">Изменить</button><button class="btn danger" data-act="order-cancel" data-id="' + o.id + '">Отменить заказ</button><span class="sep" style="width:1px;height:28px;background:var(--line)"></span><button class="btn danger" data-act="order-del" data-id="' + o.id + '">Удалить</button>';
-  else if (o.status === 'shipped') btns = '<a class="btn pri" href="#/print/c/' + o.id + '">Печать: клиенту</a><a class="btn pri" href="#/print/l/' + o.id + '">Печать: грузчику</a>' + '<a class="btn" href="#/labels/' + o.id + '">Этикетки на коробки</a>' + waBtn(o) + payBtn +
-    '<button class="btn" data-act="repeat" data-id="' + o.id + '">Повторить в корзину</button><button class="btn danger" data-act="unship" data-id="' + o.id + '">Отменить отгрузку</button><span class="sep" style="width:1px;height:28px;background:var(--line)"></span><button class="btn danger" data-act="order-del" data-id="' + o.id + '">Удалить</button>';
+  if (o.status === 'ordered') btns = '<button class="btn pri big" data-act="ship-open" data-id="' + o.id + '">Отгрузить</button><a class="btn" href="#/print/l/' + o.id + '">Печать: грузчику</a>' + rareBtns('<a class="btn" href="#/print/c/' + o.id + '">Печать: заказ клиенту</a>' + waBtn(o) + '<a class="btn" href="#/labels/' + o.id + '">Этикетки на коробки</a>' +
+    payBtn + '<button class="btn" data-act="order-edit" data-id="' + o.id + '">Изменить</button><button class="btn danger" data-act="order-cancel" data-id="' + o.id + '">Отменить заказ</button><span class="sep" style="width:1px;height:28px;background:var(--line)"></span><button class="btn danger" data-act="order-del" data-id="' + o.id + '">Удалить</button>');
+  else if (o.status === 'shipped') btns = '<a class="btn pri" href="#/print/c/' + o.id + '">Печать: клиенту</a>' + rareBtns('<a class="btn pri" href="#/print/l/' + o.id + '">Печать: грузчику</a>' + '<a class="btn" href="#/labels/' + o.id + '">Этикетки на коробки</a>') + waBtn(o) + payBtn +
+    rareBtns('<button class="btn" data-act="repeat" data-id="' + o.id + '">Повторить в корзину</button><button class="btn danger" data-act="unship" data-id="' + o.id + '">Отменить отгрузку</button><span class="sep" style="width:1px;height:28px;background:var(--line)"></span><button class="btn danger" data-act="order-del" data-id="' + o.id + '">Удалить</button>');
   else btns = '<button class="btn pri" data-act="order-restore" data-id="' + o.id + '">Вернуть в работу</button><button class="btn" data-act="repeat" data-id="' + o.id + '">Повторить в корзину</button><button class="btn danger" data-act="order-del" data-id="' + o.id + '">Удалить</button>';
   let calc;
   if (o.status === 'shipped') calc = '<div class="line"><span class="muted">Баланс до отгрузки</span><span>' + balTxt(b.before) + '</span></div>' +
@@ -752,7 +783,7 @@ VIEWS.sale = ([id]) => {
     '<h1>' + (o.status === 'shipped' ? 'Накладная' : 'Заказ') + ' № ' + o.no + ' <span style="vertical-align:middle">' + statusTag(o) + '</span></h1>' +
     '<div style="margin-top:6px">Клиент: <a href="#/client/' + c.id + '"><b>' + esc(c.name) + '</b></a> · оформлен ' + ru(o.date) + (o.shipDate ? ' · отгружен ' + ru(o.shipDate) : '') +
     (dd > LATE_DAYS ? ' <span class="tag d">не забирают ' + dd + ' дн.</span>' : '') + '</div></div>' +
-    '<div class="btns">' + btns + '</div></div>' +
+    '<div class="btns">' + btns + moreBtn(btns) + '</div></div>' +
     '<div class="row"><div class="card grow">' + groupsTable(o) + '<div class="line tot" style="font-size:20px"><span>Итого</span><span>' + rub(o.total) + '</span></div></div>' +
     '<div class="aside">' + stockCard(o) + '<div class="card"><h2>Расчёты</h2>' + calc + '<div class="hint" style="margin-top:8px">Баланс клиента сейчас: ' + balTxt(balance(o.clientId)) + '</div></div>' +
     (o.status !== 'cancelled' ? '<div class="card"><h2>Оплата накладной</h2><div style="margin-bottom:8px">' + payLabel(o, m) + '</div>' +
@@ -846,7 +877,7 @@ VIEWS.catalog = () => {
       '<td style="width:84px;white-space:nowrap"><button class="x" style="color:var(--ink2)" data-act="citem-edit" data-k="' + k + '" aria-label="Изменить товар" title="Изменить">✎</button>' +
       '<button class="x" data-act="citem-del" data-k="' + k + '" aria-label="Удалить товар" title="Удалить">×</button></td></tr>';
   }).join('');
-  return '<div class="head"><div><h1>Товары</h1><div class="sub-h">Щёлкните по товарам, чтобы выделить (Shift — несколько подряд), и перетащите мышкой на нужную папку слева. Двойной щелчок по названию — изменить.</div></div></div>' +
+  return '<div class="head"><div><h1>Товары</h1><div class="sub-h">' + (isPhone() ? 'Нажмите на папку — товары появятся ниже. Чтобы перенести товары в другую папку, отметьте их галочками.' : 'Щёлкните по товарам, чтобы выделить (Shift — несколько подряд), и перетащите мышкой на нужную папку слева. Двойной щелчок по названию — изменить.') + '</div></div></div>' +
     '<div class="row"><div class="card cat-tree" style="flex:1 1 320px;min-width:0">' +
     '<div class="btns" style="margin-bottom:10px;position:relative"><button class="btn sm" data-act="f-add">+ Папка</button><button class="btn sm" data-act="f-sub"' + (n ? '' : ' disabled') + '>+ Подпапка</button>' +
     '<button class="btn sm" data-act="f-up"' + (n ? '' : ' disabled') + ' title="Переместить папку выше" aria-label="Папку выше">↑</button><button class="btn sm" data-act="f-down"' + (n ? '' : ' disabled') + ' title="Переместить папку ниже" aria-label="Папку ниже">↓</button>' +
@@ -860,12 +891,12 @@ VIEWS.catalog = () => {
       '<button role="menuitem" data-act="f-ren"' + (n ? '' : ' disabled') + '>Переименовать папку</button><button role="menuitem" class="mdanger" data-act="f-del"' + (n ? '' : ' disabled') + '>Удалить папку</button>' +
       '</div>' : '') + '</div>' +
     '<div class="box" data-ks="ctree" style="max-height:640px;padding:4px">' + treeHtml(DB.cat, 0, 'c') + '</div></div>' +
-    '<div class="card" style="flex:999 1 520px;min-width:0">' +
+    '<div class="card" id="cat-items" style="flex:999 1 520px;min-width:0">' +
     '<div style="display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap;margin-bottom:12px">' +
     '<label class="search" style="margin-left:0;max-width:420px"><span style="position:absolute;left:-9999px">Поиск по всем папкам</span>' + icon('search', 16) + '<input class="inp" id="cat-q2" data-in="cat-q2" placeholder="Поиск по всем папкам, например «Антресоль 4-х»" value="' + esc(UI.catQ || '') + '"></label>' +
     (n && !q ? '<div class="btns"><button class="btn sm" data-act="citem-add">+ Товар</button><button class="btn sm pri" data-act="model-new">+ Модель во всех цветах</button></div>' : '') + '</div>' +
     '<h2>' + (q ? 'Найдено: ' + rows.length + (q && UI.catQ ? ' <button class="btn sm" data-act="catq-clear" style="margin-left:8px">Сбросить поиск</button>' : '') :
-      n ? esc(folderPath(n)) + ' <span class="muted" style="font-weight:400">· ' + rows.length + ' ' + plural(rows.length, 'товар', 'товара', 'товаров') + (n.ch.length && deepOn() ? ' вместе с подпапками' : '') + '</span>' : 'Выберите папку слева или найдите товар') + '</h2>' +
+      n ? esc(folderPath(n)) + ' <span class="muted" style="font-weight:400">· ' + rows.length + ' ' + plural(rows.length, 'товар', 'товара', 'товаров') + (n.ch.length && deepOn() ? ' вместе с подпапками' : '') + '</span>' : 'Выберите папку ' + (isPhone() ? 'выше' : 'слева') + ' или найдите товар') + '</h2>' +
     (n && !q ? '<div class="hint" style="margin:-8px 0 12px">Упаковка: ' + (folderPack(n) ? packText(folderPack(n)) : 'по названию товара') + ' · <button class="btn sm" style="border:0;color:var(--accent);padding:0;min-height:0" data-act="pack-folder">изменить</button></div>' : '') +
     (checked ? '<div class="warn" style="background:var(--accent-bg);color:var(--accent-ink);margin-bottom:12px"><span>Отмечено: <b>' + checked + '</b></span><span class="btns">' +
       '<select class="inp" id="move-to" style="max-width:340px;min-height:36px;padding:4px 8px" aria-label="Папка, куда перенести">' +
@@ -962,8 +993,9 @@ VIEWS.clients = () => {
       (f === 'all' || (f === 'debt' && x.b < 0) || (f === 'adv' && x.b > 0) || (f === 'wait' && x.w > 0)))
     .sort((a, b) => a.b - b.b);
   return '<div class="head"><h1>Клиенты и баланс</h1><div class="btns">' +
-    '<label class="btn" title="Файл Excel со списком покупателей из 1С">' + icon('upload', 16) + 'Загрузить из 1С<input type="file" accept=".xlsx,.xls,.csv" data-ch="clients-import" style="display:none"></label>' +
-    '<a class="btn" href="#/opening">Начальные долги</a><button class="btn" data-act="pay-new">Принять оплату</button><button class="btn pri" data-act="client-new">+ Новый клиент</button></div></div>' +
+    rareBtns('<label class="btn" title="Файл Excel со списком покупателей из 1С">' + icon('upload', 16) + 'Загрузить из 1С<input type="file" accept=".xlsx,.xls,.csv" data-ch="clients-import" style="display:none"></label>' +
+    '<a class="btn" href="#/opening">Начальные долги</a>') + '<button class="btn" data-act="pay-new">Принять оплату</button><button class="btn pri" data-act="client-new">+ Новый клиент</button>' +
+    moreBtn('class="rare"') + '</div></div>' +
     '<div class="card"><div style="display:flex;justify-content:space-between;gap:12px;flex-wrap:wrap;margin-bottom:12px"><div class="chips">' +
     [['all', 'Все'], ['debt', 'Должники'], ['adv', 'С балансом'], ['wait', 'Ждём от водителя']].map(([k, l]) => '<button class="chip' + (f === k ? ' on' : '') + '" data-act="cfilter" data-v="' + k + '">' + l + '</button>').join('') +
     '</div><input class="inp" style="max-width:300px" id="client-q" data-in="client-q" placeholder="Поиск по имени или телефону" value="' + esc(UI.clientQ) + '"></div>' +
@@ -1028,8 +1060,8 @@ VIEWS.client = ([id]) => {
   const paid = DB.payments.filter(p => p.clientId === id && p.status === 'received').reduce((s, p) => s + p.amount, 0);
   let run = c.opening || 0; const rows = m.map(x => { run += x.amt; return [x, run]; }).reverse();
   return '<div class="head"><div><div class="crumb"><a href="#/clients">Клиенты и баланс</a> / Карточка</div><h1>' + esc(c.name) + '</h1>' + (c.phone || c.note ? '<div class="hint" style="font-size:14px;margin-top:4px">' + esc([c.phone, c.note].filter(Boolean).join(' · ')) + '</div>' : '') + '</div>' +
-    '<div class="btns"><button class="btn" data-act="client-edit" data-id="' + c.id + '">Изменить</button><button class="btn" data-act="pay-new" data-id="' + c.id + '">Принять оплату</button><button class="btn pri" data-act="order-for" data-id="' + c.id + '">Оформить заказ</button>' +
-    '<span style="width:1px;height:28px;background:var(--line)"></span><button class="btn danger" data-act="client-del" data-id="' + c.id + '">Удалить</button></div></div>' +
+    '<div class="btns">' + rareBtns('<button class="btn" data-act="client-edit" data-id="' + c.id + '">Изменить</button>') + '<button class="btn" data-act="pay-new" data-id="' + c.id + '">Принять оплату</button><button class="btn pri" data-act="order-for" data-id="' + c.id + '">Оформить заказ</button>' +
+    rareBtns('<span style="width:1px;height:28px;background:var(--line)"></span><button class="btn danger" data-act="client-del" data-id="' + c.id + '">Удалить</button>') + moreBtn('class="rare"') + '</div></div>' +
     '<div class="tiles">' + tile('Баланс сейчас', '<span class="' + (b > 0 ? 'adv' : b < 0 ? 'debt' : '') + '">' + balTxt(b) + '</span>', b < 0 ? 'клиент должен вам' : b > 0 ? 'деньги клиента у вас' : 'расчёты закрыты') +
     tile('Отгружено всего', rub(shippedSum), mine.length + ' ' + plural(mine.length, 'накладная', 'накладные', 'накладных')) + tile('Оплачено всего', rub(paid), 'полученные деньги') +
     (w ? tile('Ждём от водителя', '<span style="color:var(--wait-ink)">' + rub(w) + '</span>', 'ещё не получено') : '') + '</div>' +
@@ -1215,14 +1247,26 @@ const ACT = {
     if (n.ch.length) n.open = sel === n ? !n.open : true;
     if (v === 'o') { UI.selOrder = n; UI.q = ''; } else { UI.selCat = n; UI.catChecked = {}; }
     commit();
+    // телефон: список товаров под деревом папок — показываем его сразу после выбора конечной папки
+    if (isPhone() && !n.ch.length) { const L = $(v === 'o' ? '.picker .plist' : '#cat-items'); if (L) L.scrollIntoView({ behavior: 'smooth', block: 'start' }); }
   },
   add: el => {
     const it = NODES[el.dataset.id].it[+el.dataset.i], C = DB.cart;
     if (!C.groups.length) { C.groups.push({ t: 'Шкаф 1', items: [] }); C.cur = 0; }
     const G = C.groups[C.cur], f = G.items.findIndex(x => x.n === it[0]);
     if (f >= 0) G.items[f].q++; else G.items.push({ n: it[0], q: 1, p: it[1] || 0 });
+    // телефон: каталог под корзиной — держим нажатый товар на месте, иначе страница прыгает
+    const sel = '.it[data-id="' + el.dataset.id + '"][data-i="' + el.dataset.i + '"]', top = el.getBoundingClientRect().top;
     commit();
+    if (isPhone()) {
+      const now = document.querySelector(sel); if (now) window.scrollBy(0, now.getBoundingClientRect().top - top);
+      toast('Добавлено в «' + G.t + '»: ' + it[0]);
+    }
   },
+  // плавный выезд включаем только по нажатию — иначе при открытии страницы меню мелькает
+  menu: () => { document.body.classList.add('menu-anim'); document.body.classList.toggle('menu-open'); },
+  more: el => { const b = el.parentElement; b.classList.toggle('open'); el.textContent = b.classList.contains('open') ? 'Скрыть' : 'Ещё ⋯'; },
+  'cart-top': () => { const c = $('#cart-card'); if (c) c.scrollIntoView({ behavior: 'smooth' }); },
   gsel: (el, e) => { if (/INPUT|SELECT|TEXTAREA|BUTTON/.test(e.target.tagName)) return; DB.cart.cur = +el.dataset.g; commit(); },
   gnew: () => { DB.cart.groups.push({ t: 'Шкаф ' + (DB.cart.groups.length + 1), items: [] }); DB.cart.cur = DB.cart.groups.length - 1; commit(); },
   gdel: el => {
@@ -2147,7 +2191,7 @@ function asstFor(G, gi) {
     if (nDoors < N) {
       const d = doors[0];
       add('doors', 'Корпус на ' + N + ' ' + plural(N, 'дверь', 'двери', 'дверей') + ', а дверей' + (doors.some(x => /зеркал/i.test(x.n)) ? ' с зеркалами' : '') + ' — ' + nDoors + '.',
-        d ? [A('Добавить ещё ' + (N - nDoors) + ': ' + d.n, 'as-add', { name: d.n, q: N - nDoors })] : [A('Выберите двери в каталоге справа', '', {})], true);
+        d ? [A('Добавить ещё ' + (N - nDoors) + ': ' + d.n, 'as-add', { name: d.n, q: N - nDoors })] : [A('Выберите двери в каталоге ' + catWhere(), '', {})], true);
     } else if (nDoors > N) add('doors+', 'Дверей ' + nDoors + ', а корпус на ' + N + '. Проверьте, не лишние ли.', [], true);
     // карниз
     const want = catalogFind(n => new RegExp('карниз на ' + N + '\\s*дв', 'i').test(n));
@@ -2824,7 +2868,7 @@ function rangeButton(r, act, k) {
 function rangeForm() {
   const p = UI.rp;
   modal('<div style="display:flex;justify-content:space-between;align-items:center"><h2 style="margin:0;font-size:22px">Выбор периода</h2><button class="x" data-act="modal-close" aria-label="Закрыть" style="font-size:22px">×</button></div>' +
-    '<div class="btns" style="align-items:center;flex-wrap:nowrap"><input class="inp" type="date" id="r-from" value="' + p.from + '" aria-label="С"><span>–</span><input class="inp" type="date" id="r-to" value="' + p.to + '" aria-label="По">' +
+    '<div class="btns rp-dates" style="align-items:center;flex-wrap:nowrap"><input class="inp" type="date" id="r-from" value="' + p.from + '" aria-label="С"><span>–</span><input class="inp" type="date" id="r-to" value="' + p.to + '" aria-label="По">' +
     '<button class="btn sm" style="border:0;color:var(--accent);font-weight:600;white-space:nowrap" data-act="rp-clear">Очистить период</button></div>' +
     seg(p.tab, 'rp-tab', Object.keys(RANGES).map(k => [k, k])) +
     '<div class="rp-list" role="listbox">' + RANGES[p.tab].map(([n]) => '<button role="option" aria-selected="' + (p.name === n) + '" class="' + (p.name === n ? 'on' : '') + '" data-act="rp-pick" data-v="' + esc(n) + '">' + n + '</button>').join('') + '</div>' +

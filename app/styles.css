@@ -143,8 +143,6 @@ table.t{width:100%;border-collapse:collapse}
 }
 @media (max-width:760px){
   .shell{flex-direction:column}
-  .side{position:static;height:auto;flex:none;flex-direction:row;flex-wrap:wrap}
-  .logo{width:100%}
   .main{padding:16px}
 }
 
@@ -430,3 +428,97 @@ label.chk{display:flex;gap:8px;align-items:center;font-size:13.5px;cursor:pointe
 .mprint-h{display:none}
 @media print{.mprint-h{display:block;margin:0 0 8px}.mtw{display:none}}
 @media (max-width:760px){.mdet-in{grid-template-columns:1fr}}
+
+/* ===== телефон (13.11.2026): меню-шторка, таблицы карточками, корзина ===== */
+.mtop,.mback,.mcart,.mob-only{display:none}
+.rare{display:contents}
+@media (max-width:760px){
+  /* верхняя полоса и меню, выезжающее слева */
+  .mtop{display:flex;align-items:center;gap:10px;position:sticky;top:0;z-index:45;background:var(--surface);border-bottom:1px solid var(--line);padding:8px 12px;min-height:56px}
+  .mburger{width:42px;height:42px;border:1px solid var(--input);border-radius:10px;background:#fff;font-size:20px;line-height:1;cursor:pointer;flex:none;color:var(--ink)}
+  .mlogo{font-size:17px;font-weight:800;letter-spacing:.14em}
+  .mtitle{flex:1;min-width:0;font-size:13px;color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .mtop .btn{flex:none}
+  .mtop .cnt{background:#fff;color:var(--accent)}
+  .side{position:fixed;top:0;left:0;bottom:0;height:auto;width:280px;max-width:85vw;z-index:70;transform:translateX(-105%);box-shadow:0 0 32px rgba(0,0,0,.25)}
+  body.menu-anim .side{transition:transform .2s}
+  body.menu-open .side{transform:none}
+  body.menu-open .mback{display:block;position:fixed;inset:0;background:rgba(22,25,29,.45);z-index:65}
+  body.menu-open{overflow:hidden}
+  .main{padding:14px 12px 40px;gap:14px}
+  h1{font-size:22px}
+  .card{padding:14px}
+  .head{align-items:flex-start}
+  /* поля ввода не мельче 16px — иначе iPhone увеличивает экран при нажатии */
+  .inp,select,textarea{font-size:16px}
+  /* сводка: по две плашки в ряд */
+  .kpis,.tiles{grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}
+  .kpi,.tile.card{padding:10px 12px;min-width:0}
+  .kpi .v,.tile .v{font-size:18px}
+  .filters{gap:12px}
+  .seg{max-width:100%}
+  /* редкие кнопки — под «Ещё ⋯» */
+  .mob-only{display:inline-flex}
+  .btns:not(.open) .rare{display:none}
+  .btns .sep,.rare>span[style]{display:none}
+  .btn.big{min-height:46px;padding:0 20px;font-size:16px}
+  /* таблицы — карточками: ничего не прячется справа */
+  .main .scroll{overflow:visible}
+  .main table.t{min-width:0!important;display:block}
+  .main .t thead{display:none}
+  .main .t tbody,.main .t tfoot{display:block}
+  .main .t tr{display:flex;flex-wrap:wrap;align-items:center;gap:4px 12px;padding:10px 12px;border-bottom:1px solid var(--line2)}
+  .main .t td{display:block;padding:0!important;border:0!important;background:none!important;width:auto!important;text-align:left!important;white-space:normal}
+  .main .t td:empty{display:none}
+  .main .t td.num[data-l]:not(:first-child)::before{content:attr(data-l) " ";font-size:11px;color:var(--muted);font-weight:400}
+  .main .t td.cbcell{order:-2;width:auto!important}
+  .main .t td.c-client,.main .t td:first-child:not(.cbcell){font-size:15px}
+  .main .t td.c-client{order:-1;flex:1 1 50%;min-width:0}
+  .main .t td.amount{order:-1;margin-left:auto}
+  .main .t td.amount::before{content:none!important}
+  .main .t td.c-no::before{content:"№ "}
+  .main .t tr.sel{background:#EEF4FD}.main .t tr.dim{opacity:.6}
+  .main .t tr.click:active{background:#F3F7FD}
+  .main .t tfoot tr{background:#FAFBFC;font-weight:700}
+  .main .t tr.mdet td{flex:1 1 100%}
+  .main .t .inp.pin{width:130px!important}
+  /* корзина и состав заказа: название сверху, количество и цена строкой ниже */
+  .gt,.gt tbody{display:block}
+  .gt tr{display:flex;flex-wrap:wrap;align-items:center;gap:6px 10px;padding:8px 12px;border-top:1px solid var(--line2)}
+  .gt td{display:block;border:0!important;padding:0!important;width:auto!important}
+  .gt td:first-child{flex:1 1 100%}
+  .gt tr[data-drag] td:first-child{flex:1 1 calc(100% - 90px)}
+  .gt tr[data-drag] td:nth-child(-n+4):not(:first-child){order:1}
+  .gt td:nth-child(n+3){margin-left:auto}
+  .gt td:nth-child(n+4){margin-left:0}
+  .gt .handle{display:none}
+  .qb{width:38px;height:38px}
+  .gt .pin{width:110px}
+  .ghead .inp{flex-basis:100%}
+  .cart-foot .btn.big{flex:1 1 100%;justify-content:center}
+  .picker .ptree{max-height:300px}.picker .plist{max-height:none}
+  .it{padding:11px 10px}
+  .picker .btns{flex-wrap:nowrap}
+  /* итог корзины всегда внизу экрана */
+  .mcart{display:flex;position:fixed;left:0;right:0;bottom:0;z-index:40;gap:10px;align-items:center;padding:10px 12px calc(10px + env(safe-area-inset-bottom));background:var(--surface);border-top:1px solid var(--line);box-shadow:0 -6px 20px rgba(0,0,0,.08)}
+  .mcart-sum{flex:1;min-width:0;display:flex;flex-direction:column;align-items:flex-start;border:0;background:none;font:inherit;cursor:pointer;padding:0;color:var(--ink);text-align:left}
+  .mcart-sum span{font-size:12px;color:var(--muted)}.mcart-sum b{font-size:18px}
+  .has-bulk{padding-bottom:110px}
+  .toast{bottom:90px;max-width:calc(100% - 24px);width:max-content}
+  .bulkbar{bottom:12px;left:12px;right:12px;transform:none;max-width:none}
+  /* окна — снизу во весь экран, кнопки «Отмена / Сохранить» всегда видны внизу */
+  .ovl{padding:24px 0 0;align-items:flex-end;overflow:hidden}
+  .dlg{padding:18px 16px 0;max-width:none;border-radius:16px 16px 0 0;max-height:calc(100dvh - 24px);overflow:auto;overscroll-behavior:contain}
+  .dlg>.btns:last-child{position:sticky;bottom:0;background:#fff;margin:0 -16px;padding:10px 16px calc(12px + env(safe-area-inset-bottom));border-top:1px solid var(--line2);flex-wrap:nowrap}
+  .dlg>.btns:last-child .btn{flex:1 1 0;justify-content:center;min-height:46px}
+  .dlg>:last-child:not(.btns){margin-bottom:18px}
+  body:has(#modal .ovl){overflow:hidden}
+  .paperwrap{overflow-x:auto}
+  .rp-dates{flex-wrap:wrap!important}
+  .rp-dates .inp{flex:1 1 0;min-width:0}
+  .rp-dates .btn{flex:1 1 100%;justify-content:flex-start}
+  /* прокрутка к блоку — не прятать его под верхней полосой */
+  #cart-card,#cat-items,.picker .plist{scroll-margin-top:68px}
+  .paper{padding:16px 12px}
+}
+@media print{.mtop,.mback,.mcart{display:none!important}}
